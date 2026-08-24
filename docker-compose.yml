@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: app_mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+    ports:
+      - "${MYSQL_PORT}:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    command:
+      - --default-time-zone=+07:00
+
+    networks:
+      - app_network
+
+
+  minio:
+    image: minio/minio:latest
+    container_name: app_minio
+    restart: unless-stopped
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+
+    ports:
+      # MinIO API
+      - "${MINIO_API_PORT:-9000}:9000"
+
+      # MinIO Web Console
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+
+    volumes:
+      - minio_data:/data
+
+    command: server /data --console-address ":9001"
+
+    networks:
+      - app_network
+
+
+volumes:
+  mysql_data:
+  minio_data:
+
+
+networks:
+  app_network:
+    driver: bridge
