@@ -1,14 +1,36 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Clock, Plus, Search } from "lucide-react";
+import ThemMoiDuThaoModal from "@/components/shared/ThemMoiDuThaoModal";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchDen, setSearchDen] = useState("");
+  const [searchDi, setSearchDi] = useState("");
+  const [searchCv, setSearchCv] = useState("");
+
+  const handleSearchDen = () => {
+    if (searchDen) router.push(`/van-ban-den/toan-bo-van-ban-den-don-vi?q=${encodeURIComponent(searchDen)}`);
+  };
+  const handleSearchDi = () => {
+    if (searchDi) router.push(`/van-ban-di/toan-bo-van-ban-di?q=${encodeURIComponent(searchDi)}`);
+  };
+  const handleSearchCv = () => {
+    if (searchCv) router.push(`/cong-viec/cong-viec-duoc-giao?q=${encodeURIComponent(searchCv)}`);
+  };
+
   return (
     <div className="w-full bg-white min-h-full p-4 md:p-6 rounded-md shadow-sm border border-gray-100">
       
       {/* Top action */}
       <div className="flex justify-end mb-4">
-        <button className="bg-[#0070c0] hover:bg-[#005fb8] text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center shadow-sm transition-colors">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-[#0070c0] hover:bg-[#005fb8] text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center shadow-sm transition-colors"
+        >
           <Plus className="w-3.5 h-3.5 mr-1" /> Văn bản dự thảo
         </button>
       </div>
@@ -23,7 +45,7 @@ export default function Dashboard() {
         </div>
         
         <div className="flex justify-end items-center mb-4 space-x-2">
-          <select className="border border-gray-300 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#0070c0]">
+          <select className="border border-gray-300 rounded px-2 py-1 text-xs bg-white text-gray-900 font-medium focus:outline-none focus:ring-1 focus:ring-[#0070c0]">
             <option>2026</option>
             <option>2025</option>
           </select>
@@ -68,10 +90,13 @@ export default function Dashboard() {
             <h3 className="font-medium text-gray-800 text-sm mb-4">Tìm kiếm văn bản đến</h3>
             <input 
               type="text" 
+              value={searchDen}
+              onChange={(e) => setSearchDen(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearchDen()}
               placeholder="Tìm kiếm văn bản theo số hiệu, trích yếu..."
-              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-[#1b64f2]"
+              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-[#1b64f2] text-gray-900"
             />
-            <button className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
+            <button onClick={handleSearchDen} className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
               Tìm kiếm
             </button>
           </div>
@@ -84,10 +109,13 @@ export default function Dashboard() {
             <h3 className="font-medium text-gray-800 text-sm mb-4">Tìm kiếm văn bản đi</h3>
             <input 
               type="text" 
+              value={searchDi}
+              onChange={(e) => setSearchDi(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearchDi()}
               placeholder="Tìm kiếm văn bản theo số hiệu, trích yếu..."
-              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-green-600"
+              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-green-600 text-gray-900"
             />
-            <button className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
+            <button onClick={handleSearchDi} className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
               Tìm kiếm
             </button>
           </div>
@@ -100,16 +128,20 @@ export default function Dashboard() {
             <h3 className="font-medium text-gray-800 text-sm mb-4">Tìm kiếm công việc</h3>
             <input 
               type="text" 
+              value={searchCv}
+              onChange={(e) => setSearchCv(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearchCv()}
               placeholder="Tìm kiếm công việc theo số hiệu, tên công việc..."
-              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-cyan-400"
+              className="w-full border border-gray-200 rounded px-3 py-2 text-xs mb-3 focus:outline-none focus:border-cyan-400 text-gray-900"
             />
-            <button className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
+            <button onClick={handleSearchCv} className="w-full bg-[#1b64f2] hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors text-xs">
               Tìm kiếm
             </button>
           </div>
         </div>
       </div>
       
+      <ThemMoiDuThaoModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
     </div>
   );
 }

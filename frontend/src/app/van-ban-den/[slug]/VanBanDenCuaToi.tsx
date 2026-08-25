@@ -69,10 +69,15 @@ export default function VanBanDenCuaToi() {
 
   let filteredData = dummyData.filter(row => trangThai.includes(row.trangThai));
 
+    const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
-      (row.soKyHieu && row.soKyHieu.toLowerCase().includes(searchKeyword.toLowerCase())) ||
-      (row.tenCongViec && row.tenCongViec.toLowerCase().includes(searchKeyword.toLowerCase()))
+      removeAccents(row.soKyHieu).includes(kw) ||
+      removeAccents(row.tenCongViec).includes(kw)
     );
   }
 

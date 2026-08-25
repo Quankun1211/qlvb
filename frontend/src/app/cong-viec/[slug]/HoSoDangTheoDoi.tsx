@@ -128,9 +128,14 @@ export default function HoSoDangTheoDoi() {
 
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
 
+    const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
-      row.ten.toLowerCase().includes(searchKeyword.toLowerCase())
+      removeAccents(row.ten).includes(kw)
     );
   }
 

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Search, RefreshCcw, ChevronDown, Paperclip,
   Download, X, DownloadCloud, Info, FileText, Send
@@ -67,10 +67,21 @@ export default function VanBanDenPage() {
 
   // States for filters
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
-  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const searchParams = useSearchParams();
+  const queryQ = searchParams.get("q") || "";
+  const [searchKeyword, setSearchKeyword] = useState<string>(queryQ);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["Chưa xử lý", "Đang xử lý", "Đã hoàn thành", "Đã tạm dừng"]);
   const [selectedYear, setSelectedYear] = useState("2026");
+
+  useEffect(() => {
+    setSearchKeyword(queryQ);
+  }, [queryQ]);
+
+  const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
 
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -111,6 +122,15 @@ export default function VanBanDenPage() {
     filteredData = filteredData.filter(row => row.ngayDen === "24/08/2026");
   } else if (activeDateFilter === "yesterday") {
     filteredData = filteredData.filter(row => row.ngayDen === "23/08/2026");
+  }
+
+  if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
+    filteredData = filteredData.filter(row => 
+      removeAccents(row.trichYeu).includes(kw) ||
+      removeAccents(row.soKyHieu).includes(kw) ||
+      removeAccents(row.soDen).includes(kw)
+    );
   }
 
   const [currentPage, setCurrentPage] = useState(1);

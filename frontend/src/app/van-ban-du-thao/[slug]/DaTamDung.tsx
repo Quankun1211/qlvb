@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
-import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
 
 const allStatuses = [
   "Đã tạm dừng"
@@ -108,12 +108,12 @@ export default function DaTamDung() {
   if (isAdvSearchActive) {
     if (advSearch.noiDung) {
       filteredData = filteredData.filter(row => 
-        (row.title && row.title.toLowerCase().includes(advSearch.noiDung.toLowerCase())) ||
-        (row.noiDung && row.noiDung.toLowerCase().includes(advSearch.noiDung.toLowerCase()))
+        removeAccents(row.title).includes(removeAccents(advSearch.noiDung)) ||
+        removeAccents(row.noiDung).includes(removeAccents(advSearch.noiDung))
       );
     }
     if (advSearch.phongBan) {
-      filteredData = filteredData.filter(row => row.phongBan && row.phongBan.toLowerCase().includes(advSearch.phongBan.toLowerCase()));
+      filteredData = filteredData.filter(row => removeAccents(row.phongBan).includes(removeAccents(advSearch.phongBan)));
     }
     if (advSearch.ngayTrinhFrom) {
       filteredData = filteredData.filter(row => row.ngayTrinhISO && row.ngayTrinhISO >= advSearch.ngayTrinhFrom);
@@ -125,11 +125,16 @@ export default function DaTamDung() {
     // Basic search is only applied if advanced search is NOT active, or you can apply both. Let's apply both for safety.
   }
 
+    const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
-      (row.title && row.title.toLowerCase().includes(searchKeyword.toLowerCase())) ||
-      (row.so && row.so.toLowerCase().includes(searchKeyword.toLowerCase())) ||
-      (row.nguoi && row.nguoi.toLowerCase().includes(searchKeyword.toLowerCase()))
+      removeAccents(row.title).includes(kw) ||
+      removeAccents(row.so).includes(kw) ||
+      removeAccents(row.nguoi).includes(kw)
     );
   }
 
@@ -327,10 +332,9 @@ export default function DaTamDung() {
       )}
 
       {/* --- DOCUMENT DETAIL MODAL --- */}
-      <DocumentDetailModal 
+      <VanBanDuThaoDetailModal 
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
-        title="Chi tiết văn bản dự thảo đã tạm dừng"
       />
 
     </div>

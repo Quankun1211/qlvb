@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, X, Paperclip, FileDown, Search as SearchIcon, ArrowDownToLine, FileText, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
@@ -8,27 +7,16 @@ import { AttachmentModal, PDFDetailModal, WordDetailModal } from "@/app/van-ban-
 
 const mockDonVi = ["Đơn vị đôn đốc", "Văn phòng Bộ", "Cục Cơ yếu-Công nghệ thông tin"];
 const mockNguoiSoan = ["Đậu Việt Đức", "Đỗ Văn Điển", "Lưu Anh Tuấn", "Lê Mai Phượng", "Kiều Việt Hùng"];
-const mockDonViNoiBo = ["Cục Lãnh sự", "Vụ Luật pháp và Điều ước quốc tế", "Văn phòng Bộ"];
+const mockDonViNoiBo = ["Cục Lãnh sự", "Vụ Luật pháp và Điều ước quốc tế", "Văn phòng Bộ", "Vụ Tổ chức Cán bộ"];
 const mockDonViLienThong = ["UBND TP Hà Nội", "Bộ Thông tin và Truyền thông", "Bộ Công an", "Bảo hiểm Xã hội VN"];
 
-export default function ToanBoVanBanDi() {
+export default function VanBanDaPhatHanh() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const searchParams = useSearchParams();
-  const queryQ = searchParams.get("q") || "";
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState("2026");
-  const [searchKeyword, setSearchKeyword] = useState(queryQ);
-
-  useEffect(() => {
-    setSearchKeyword(queryQ);
-  }, [queryQ]);
-
-  const removeAccents = (str: string | undefined | null) => {
-    if (!str) return "";
-    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  };
+  const [searchKeyword, setSearchKeyword] = useState("");
   
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
@@ -56,26 +44,29 @@ export default function ToanBoVanBanDi() {
   const [pageSize, setPageSize] = useState(10);
 
   const dummyData: any[] = [
-    { soDi: 0, soKH: "", ngayBH: "25/08/2026", trichYeu: "Phúc 3704/LPQT về cung cấp thông tin dự án Luật Định danh và xác thực điện tử", canBoSoanThao: "Đậu Việt Đức", nguoiKy: "Nguyễn Như Trung", noiNhan: "", hasFile: false },
-    { soDi: 0, soKH: "", ngayBH: "25/08/2026", trichYeu: "Phúc cv 6193/BKHCN báo cáo tổng kết việc thi hành Thông tư số 11/2015...", canBoSoanThao: "", nguoiKy: "Lê Anh Tuấn", noiNhan: "", hasFile: true },
-    { soDi: 1568, soKH: "1568/CYTT-HT", ngayBH: "24/08/2026", trichYeu: "Phúc CV 297 TGDV Xin ý kiến dự thảo tờ trình của BTGDV", canBoSoanThao: "Đỗ Văn Điển", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Cơ quan Đảng Ủy Bộ", hasFile: true },
-    { soDi: 1567, soKH: "1567/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", canBoSoanThao: "Đỗ Văn Điển", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1563, soKH: "1563/CYTT-TC", ngayBH: "24/08/2026", trichYeu: "Xin cấp HCNG", canBoSoanThao: "Lưu Anh Tuấn", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Lãnh sự", hasFile: true },
-    { soDi: 1565, soKH: "1565/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "Phúc CV 3661 LPQT Góp ý TKCT của BCKTKT dự án LPQT 2026", canBoSoanThao: "Lê Mai Phượng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1566, soKH: "1566/CYTT-", ngayBH: "24/08/2026", trichYeu: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", canBoSoanThao: "Đậu Việt Đức", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ, Cơ quan Đảng Ủy Bộ, Xem thêm", hasFile: true },
-    { soDi: 1564, soKH: "1564/PG-CYTT-KT", ngayBH: "24/08/2026", trichYeu: "Xyk TTr LĐB vv ký ban hành QĐ cử CB đi công tác nước ngoài (M)", canBoSoanThao: "", nguoiKy: "Nguyễn Như Trung", noiNhan: "", hasFile: true },
-    { soDi: 1560, soKH: "1560/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Về cung cấp thông tin phục vụ CV số 4431/TGV ngày 21/8/2026 của Tổ Giúp việc", canBoSoanThao: "Kiều Việt Hùng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Ngoại giao kinh tế", hasFile: true },
-    { soDi: 1561, soKH: "1561/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Công văn gửi Cục NVVH đ/n cho ý kiến đối với Báo cáo đề xuất chủ trương đầu tư...", canBoSoanThao: "Phạm Trung Dũng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Ngoại vụ và Ngoại giao văn hóa", hasFile: true }
+    { soDi: 1569, soKH: "1569/CYTT-TC", ngayBH: "25/08/2026", trichYeu: "(GẤP) Xin ý kiến hồ sơ duyệt danh sách hưởng tiền CĐS", nguoiKy: "Hồ Sỹ An", noiNhan: "Vụ Tổ chức Cán bộ", hasFile: true },
+    { soDi: 1570, soKH: "1570/CYTT-NC", ngayBH: "25/08/2026", trichYeu: "Phúc 3704/LPQT về cung cấp thông tin dự án Luật Định danh và xác thực điện tử", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
+    { soDi: 1568, soKH: "1568/CYTT-HT", ngayBH: "24/08/2026", trichYeu: "Phúc CV 297 TGDV Xin ý kiến dự thảo tờ trình của BTGDV", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Cơ quan Đảng Ủy Bộ", hasFile: true },
+    { soDi: 1567, soKH: "1567/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
+    { soDi: 1563, soKH: "1563/CYTT-TC", ngayBH: "24/08/2026", trichYeu: "Xin cấp HCNG", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Lãnh sự", hasFile: true },
+    { soDi: 1565, soKH: "1565/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "Phúc CV 3661 LPQT Góp ý TKCT của BCKTKT dự án LPQT 2026", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
+    { soDi: 1566, soKH: "1566/CYTT-", ngayBH: "24/08/2026", trichYeu: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ, Cơ quan Đảng Ủy Bộ, Xem thêm", hasFile: true },
+    { soDi: 1560, soKH: "1560/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Về cung cấp thông tin phục vụ CV số 4431/TGV ngày 21/8/2026 của Tổ Giúp việc", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Ngoại giao kinh tế", hasFile: true },
+    { soDi: 1561, soKH: "1561/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Công văn gửi Cục NVVH đ/n cho ý kiến đối với Báo cáo đề xuất chủ trương đầu tư Dự án \"Nâng cấp phần mềm Cơ sở dữ liệu chuyên ngành Ngoại vụ phục vụ công tác chỉ đạo, điều hành đơn vị\" của SNV thành phố Đà Nẵng.", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Ngoại vụ và Ngoại giao văn hóa", hasFile: true },
+    { soDi: 1562, soKH: "1562/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Phúc 2871/VP-THBC về việc xin ý kiến dự thảo Quy chế sử dụng AI trong BNG", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ", hasFile: true }
   ];
 
   let filteredData = dummyData;
 
+    const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   if (searchKeyword) {
     const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
       removeAccents(row.trichYeu).includes(kw) ||
-      removeAccents(row.soKH).includes(kw) ||
-      removeAccents(row.soDi).includes(kw)
+      removeAccents(row.soKH).includes(kw)
     );
   }
 
@@ -109,7 +100,7 @@ export default function ToanBoVanBanDi() {
   return (
     <div className="w-full min-h-full bg-white shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h1 className="text-[22px] font-normal text-gray-800">Danh sách văn bản đi</h1>
+        <h1 className="text-[22px] font-normal text-gray-800">Danh sách Văn bản đã phát hành</h1>
         
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center text-[13px] text-[#005fb8]">
@@ -149,17 +140,13 @@ export default function ToanBoVanBanDi() {
           <thead>
             <tr>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[5%]">Số đi</th>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[10%]">Số KH</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Số ký hiệu</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[10%]">Ngày BH</th>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[30%]">Trích yếu</th>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[12%]">Cán bộ soạn thảo</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[40%]">Trích yếu</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[12%]">Người ký</th>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Nơi nhận</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Nơi nhận văn bản</th>
               <th className="py-2.5 px-2 border border-gray-300 text-center bg-white w-[3%]">
                 <Paperclip className="w-4 h-4 mx-auto text-gray-600" />
-              </th>
-              <th className="py-2.5 px-2 border border-gray-300 text-center bg-white w-[3%]">
-                <input type="checkbox" className="rounded text-[#005fb8] focus:ring-[#005fb8]" />
               </th>
             </tr>
           </thead>
@@ -168,7 +155,7 @@ export default function ToanBoVanBanDi() {
               paginatedData.map((row, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors text-gray-900">
                   <td className="py-2.5 px-3 border border-gray-300 text-center">{row.soDi}</td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center text-[#005fb8] font-medium hover:underline cursor-pointer">{row.soKH}</td>
+                  <td className="py-2.5 px-3 border border-gray-300 text-center text-gray-900 font-medium">{row.soKH}</td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center">{row.ngayBH}</td>
                   <td className="py-2.5 px-3 border border-gray-300">
                     <span 
@@ -178,7 +165,6 @@ export default function ToanBoVanBanDi() {
                       {row.trichYeu}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.canBoSoanThao}</td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center">{row.nguoiKy}</td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center">{row.noiNhan}</td>
                   <td className="py-2.5 px-2 border border-gray-300 text-center">
@@ -191,14 +177,11 @@ export default function ToanBoVanBanDi() {
                       </button>
                     )}
                   </td>
-                  <td className="py-2.5 px-2 border border-gray-300 text-center">
-                    <input type="checkbox" className="rounded text-[#005fb8] focus:ring-[#005fb8]" />
-                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-gray-800 bg-gray-50/50 border border-gray-200 font-medium">
+                <td colSpan={7} className="py-8 text-center text-gray-800 bg-gray-50/50 border border-gray-200 font-medium">
                   Không có dữ liệu
                 </td>
               </tr>
@@ -290,7 +273,7 @@ export default function ToanBoVanBanDi() {
 
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-[180px] font-bold shrink-0 text-right">Chọn người soạn thảo</div>
-                <div className="w-[280px]">
+                <div className="flex-1">
                   <select 
                     value={advSearch.nguoiSoanThao}
                     onChange={e => setAdvSearch({...advSearch, nguoiSoanThao: e.target.value})}
@@ -299,20 +282,6 @@ export default function ToanBoVanBanDi() {
                     <option value="">Nhập người soạn thảo...</option>
                     {mockNguoiSoan.map((ns, idx) => (
                       <option key={idx} value={ns}>{ns}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="w-[160px] font-bold shrink-0 text-right ml-4">Chọn đơn vị nhận nội bộ</div>
-                <div className="flex-1">
-                  <select 
-                    value={advSearch.donViNhanNoiBo}
-                    onChange={e => setAdvSearch({...advSearch, donViNhanNoiBo: e.target.value})}
-                    className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white"
-                  >
-                    <option value="">Nhập đơn vị nhận nội bộ...</option>
-                    {mockDonViNoiBo.map((dv, idx) => (
-                      <option key={idx} value={dv}>{dv}</option>
                     ))}
                   </select>
                 </div>

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Download, Plus, FileText, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowDownToLine, FileDown } from "lucide-react";
+import { X, Search, Download, Plus, FileText, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowDownToLine, FileDown, Paperclip } from "lucide-react";
 import { PDFDetailModal, WordDetailModal } from "@/app/van-ban-den/[slug]/SharedModals";
 
 interface DocumentDetailModalProps {
@@ -42,10 +42,23 @@ const defaultMockData = {
     trangThai: "Chưa xử lý",
     canPhanHoi: "Có",
     luanChuyen: [
-      { thoiGian: "08:26 25/08/2026", noiDung: "(Cục Cơ yếu-Công nghệ thông tin) Văn thư CY-CNTT thực hiện thao tác: Vào sổ văn bản đến 2978/VP-TKBT" },
-      { thoiGian: "08:14 25/08/2026", noiDung: "Văn bản được gửi tới từ đơn vị: Văn phòng Bộ" }
+      { thoiGian: "13:19 25/08/2026", noiDung: "(Cục Cơ yếu-Công nghệ thông tin) Lãnh Đạo CYTT phân công xử lý công việc tới Phòng Tổ chức - Tổng hợp" },
+      { thoiGian: "12:36 25/08/2026", noiDung: "(Cục Cơ yếu-Công nghệ thông tin) Văn thư CY-CNTT thực hiện thao tác: Vào sổ văn bản đến 2990/VP-CCHC" },
+      { thoiGian: "12:01 25/08/2026", noiDung: "Văn bản được gửi tới từ đơn vị: Văn phòng Bộ" }
     ]
-  }
+  },
+  thongTinCongViecToanBo: {
+    tenCongViec: "V/v Đề nghị cung cấp thông tin liên quan đến công tác tiếp công dân, giải quyết khiếu nại, tố cáo, kiến nghị, phản ánh",
+    nguoiLap: "Lãnh Đạo CYTT",
+    hanXuLy: "",
+    donViChuTri: "Phòng Tổ chức - Tổng hợp",
+    donViPhoiHop: "",
+    trangThai: "Chưa xử lý",
+    canPhanHoi: "Có"
+  },
+  yKien: [
+    { stt: 1, tenLanhDao: "Lãnh Đạo CYTT", noiDung: "V/v Đề nghị cung cấp thông tin liên quan đến công tác tiếp công dân, giải quyết khiếu nại, tố cáo, kiến nghị, phản ánh: P TC (g/q)", ngayChoYKien: "25/08/2026 13:19" }
+  ]
 };
 
 export default function DocumentDetailModal({ isOpen, onClose, title, data = defaultMockData }: DocumentDetailModalProps) {
@@ -75,7 +88,7 @@ export default function DocumentDetailModal({ isOpen, onClose, title, data = def
       >
         {/* HEADER */}
         <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200 shrink-0">
-          <h2 className="text-[18px] font-medium text-gray-800">{title}</h2>
+          <h2 className="text-[18px] font-medium text-gray-800">Chi tiết văn bản đến</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800 transition-colors">
             <X className="w-6 h-6" />
           </button>
@@ -185,8 +198,30 @@ export default function DocumentDetailModal({ isOpen, onClose, title, data = def
           </fieldset>
 
           {/* Ý KIẾN */}
-          <fieldset className="border border-gray-300 rounded-sm mb-6 bg-white relative pt-4 pb-2 px-4 h-[100px]">
+          <fieldset className="border border-gray-300 rounded-sm mb-6 bg-white relative pt-4 pb-4 px-4">
             <legend className="text-[14px] font-bold text-gray-800 px-2 bg-white absolute -top-3 left-4">Ý kiến</legend>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="py-2.5 px-3 text-center font-bold text-gray-800 w-[5%] border-r border-gray-200">STT</th>
+                  <th className="py-2.5 px-3 text-center font-bold text-gray-800 w-[20%] border-r border-gray-200">Tên lãnh đạo</th>
+                  <th className="py-2.5 px-3 text-center font-bold text-gray-800 w-[50%] border-r border-gray-200">Nội dung</th>
+                  <th className="py-2.5 px-3 text-center font-bold text-gray-800 w-[15%] border-r border-gray-200">Ngày cho ý kiến</th>
+                  <th className="py-2.5 px-3 text-center font-bold text-gray-800 w-[10%]"><Paperclip className="w-4 h-4 mx-auto text-gray-600" /></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.yKien?.map((item: any, idx: number) => (
+                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50/50">
+                    <td className="py-2.5 px-3 text-center text-gray-900 border-r border-gray-200">{item.stt}</td>
+                    <td className="py-2.5 px-3 text-gray-900 border-r border-gray-200">{item.tenLanhDao}</td>
+                    <td className="py-2.5 px-3 text-gray-900 border-r border-gray-200">{item.noiDung}</td>
+                    <td className="py-2.5 px-3 text-center text-gray-900 border-r border-gray-200">{item.ngayChoYKien}</td>
+                    <td className="py-2.5 px-3 text-center text-gray-900"></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </fieldset>
 
           {/* THÔNG TIN CÔNG VIỆC */}
@@ -232,9 +267,11 @@ export default function DocumentDetailModal({ isOpen, onClose, title, data = def
                       <tr>
                         <td className="py-2.5 font-bold text-gray-800">Trạng thái</td>
                         <td className="py-2.5">
-                          <span className="inline-block px-2.5 py-1 bg-[#6c757d] text-white rounded-[10px] text-[11px] font-medium">{data.thongTinCongViec.trangThai}</span>
+                          <span className={`inline-block px-2.5 py-1 text-white rounded-[10px] text-[11px] font-medium ${data.thongTinCongViec.trangThai === 'Đang xử lý' ? 'bg-[#007bff]' : 'bg-[#6c757d]'}`}>
+                            {data.thongTinCongViec.trangThai}
+                          </span>
                         </td>
-                        <td className="py-2.5 font-bold text-gray-800 pl-4">Cần phản hồi</td>
+                        <td className="py-2.5 font-bold text-gray-800 pl-4 border-l border-gray-100">Cần phản hồi</td>
                         <td className="py-2.5">{data.thongTinCongViec.canPhanHoi}</td>
                       </tr>
                     </tbody>
@@ -276,6 +313,45 @@ export default function DocumentDetailModal({ isOpen, onClose, title, data = def
                       <div className="text-gray-500 text-[12px]">1-2 / 2</div>
                     </div>
                   </fieldset>
+                </div>
+              )}
+
+              {activeTab === 'toan-bo' && (
+                <div className="w-full">
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2.5 font-bold text-gray-800 w-[15%]">Tên công việc</td>
+                        <td className="py-2.5" colSpan={3}>{data.thongTinCongViecToanBo.tenCongViec}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
+                        <td className="py-2.5 font-bold text-gray-800 w-[15%]">Người lập</td>
+                        <td className="py-2.5 w-[35%]">{data.thongTinCongViecToanBo.nguoiLap}</td>
+                        <td className="py-2.5 font-bold text-gray-800 w-[15%] pl-4 border-l border-gray-100">Hạn xử lý</td>
+                        <td className="py-2.5 w-[35%]">{data.thongTinCongViecToanBo.hanXuLy}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2.5 font-bold text-gray-800 w-[15%]">Đơn vị chủ trì</td>
+                        <td className="py-2.5">{data.thongTinCongViecToanBo.donViChuTri}</td>
+                        <td className="py-2.5 font-bold text-gray-800 pl-4 border-l border-gray-100">Đơn vị phối hợp</td>
+                        <td className="py-2.5">{data.thongTinCongViecToanBo.donViPhoiHop}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
+                        <td className="py-2.5 font-bold text-gray-800">File đính kèm</td>
+                        <td className="py-2.5" colSpan={3}></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2.5 font-bold text-gray-800">Trạng thái</td>
+                        <td className="py-2.5">
+                          <span className={`inline-block px-2.5 py-1 text-white rounded-[10px] text-[11px] font-medium ${data.thongTinCongViecToanBo.trangThai === 'Chưa xử lý' ? 'bg-[#6c757d]' : 'bg-[#007bff]'}`}>
+                            {data.thongTinCongViecToanBo.trangThai}
+                          </span>
+                        </td>
+                        <td className="py-2.5 font-bold text-gray-800 pl-4 border-l border-gray-100">Cần phản hồi</td>
+                        <td className="py-2.5">{data.thongTinCongViecToanBo.canPhanHoi}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
