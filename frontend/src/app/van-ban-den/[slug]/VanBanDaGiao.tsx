@@ -11,7 +11,8 @@ import { workService } from "@/services/apiService";
 export default function VanBanDaGiao() {
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
   const [showTrangThaiDropdown, setShowTrangThaiDropdown] = useState(false);
-  
+  const [selectedDocumentId, setSelectedDocumentId] =
+      useState<number | null>(null);
   const allTrangThai = ["Chưa xử lý", "Đang xử lý", "Đã kết thúc", "Quá hạn", "Tạm dừng", "Từ chối vào sổ"];
   const [trangThai, setTrangThai] = useState<string[]>(allTrangThai);
   
@@ -169,7 +170,10 @@ export default function VanBanDaGiao() {
                   <td className="p-2 border-r border-gray-200 align-top pt-3 text-gray-800 font-medium">
                     <span 
                       className="text-[#005fb8] hover:underline cursor-pointer font-medium leading-relaxed"
-                      onClick={() => setShowDetailModal(true)}
+                      onClick={() => {
+                        setSelectedDocumentId(row.id)
+                        setShowDetailModal(true)
+                      }}
                     >
                       {row.tenCongViec}
                     </span>
@@ -276,11 +280,11 @@ export default function VanBanDaGiao() {
         </div>
       )}
 
-      {/* --- DOCUMENT DETAIL MODAL --- */}
       <DocumentDetailModal 
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
         title="Chi tiết văn bản đã giao"
+        documentId={selectedDocumentId}
       />
 
     </div>
