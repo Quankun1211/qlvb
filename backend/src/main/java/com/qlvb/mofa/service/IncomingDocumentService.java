@@ -285,63 +285,72 @@ public class IncomingDocumentService {
         String username,
         Long id
         ) {
-        User user = userService.findActiveByUsername(username);
+                User user = userService.findActiveByUsername(username);
 
-        if (user.getUnit() == null) {
-                throw new IllegalStateException(
-                        "Người dùng chưa được phân công đơn vị"
-                );
-        }
-
-        IncomingDocument incomingDocument =
-                incomingDocumentRepository.findById(id)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Không tìm thấy văn bản đến: " + id
-                                )
+                if (user.getUnit() == null) {
+                        throw new IllegalStateException(
+                                "Người dùng chưa được phân công đơn vị"
                         );
+                }
 
-        if (!incomingDocument.getReceivingUnit().getId()
-                .equals(user.getUnit().getId())) {
-                throw new IllegalStateException(
-                        "Bạn không có quyền xem văn bản này"
-                );
+                IncomingDocument incomingDocument =
+                        incomingDocumentRepository.findById(id)
+                                .orElseThrow(() ->
+                                        new IllegalArgumentException(
+                                                "Không tìm thấy văn bản đến: " + id
+                                        )
+                                );
+
+                if (!incomingDocument.getReceivingUnit().getId()
+                        .equals(user.getUnit().getId())) {
+                        throw new IllegalStateException(
+                                "Bạn không có quyền xem văn bản này"
+                        );
+                }
+
+                Document document = incomingDocument.getDocument();
+
+                return IncomingDocumentDetailResponse.builder()
+                        .id(incomingDocument.getId())
+                        .documentId(document.getId())
+                        .incomingNumber(incomingDocument.getIncomingNumber())
+                        .documentNumber(document.getReferenceNumber())
+                        .register(null)
+                        .documentType(document.getDocumentType())
+                        .issuedDate(document.getIssueDate())
+                        .receivedDate(incomingDocument.getReceivedDate())
+                        .receivedAt(null)
+                        .paperAttached(null)
+                        .legalDocument(null)
+                        .issuingAgency(
+                                document.getIssuingUnit() != null
+                                        ? document.getIssuingUnit().getName()
+                                        : null
+                        )
+                        .summary(document.getSubject())
+                        .responseDeadline(incomingDocument.getDueAt())
+                        .responseDays(null)
+                        .securityLevel(null)
+                        .urgencyLevel(null)
+                        .handlingUnit(
+                                incomingDocument.getReceivingUnit() != null
+                                        ? incomingDocument.getReceivingUnit().getName()
+                                        : null
+                        )
+                        .status(
+                                incomingDocument.getStatus() != null
+                                        ? incomingDocument.getStatus().name()
+                                        : null
+                        )
+                        .responseRequired(incomingDocument.getResponseRequired())
+                        .createdAt(incomingDocument.getCreatedAt())
+                        .updatedAt(incomingDocument.getUpdatedAt())
+                        .attachments(getAttachments(incomingDocument))
+                        .works(getWorks(incomingDocument))
+                        .histories(getHistories(incomingDocument))
+                        .build();
         }
-
-        Document document = incomingDocument.getDocument();
-
-        return IncomingDocumentDetailResponse.builder()
-                .id(incomingDocument.getId())
-                .documentId(document.getId())
-                .incomingNumber(incomingDocument.getIncomingNumber())
-                .documentNumber(document.getReferenceNumber())
-                .summary(document.getSubject())
-                .receivedDate(incomingDocument.getReceivedDate())
-                .issuingAgency(
-                        document.getIssuingUnit() != null
-                                ? document.getIssuingUnit().getName()
-                                : null
-                )
-                .handlingUnit(
-                        incomingDocument.getReceivingUnit() != null
-                                ? incomingDocument.getReceivingUnit().getName()
-                                : null
-                )
-                .documentType(document.getDocumentType())
-                .status(
-                        incomingDocument.getStatus() != null
-                                ? incomingDocument.getStatus().name()
-                                : null
-                )
-                .responseRequired(incomingDocument.getResponseRequired())
-                .createdAt(incomingDocument.getCreatedAt())
-                .updatedAt(incomingDocument.getUpdatedAt())
-                .attachments(getAttachments(incomingDocument))
-                .works(getWorks(incomingDocument))
-                .histories(getHistories(incomingDocument))
-                .opinions(List.of())
-                .build();
-        }
+        
      public Page<IncomingDocumentResponse> getAllInternal(
         String username,
         IncomingDocumentSearchRequest request,

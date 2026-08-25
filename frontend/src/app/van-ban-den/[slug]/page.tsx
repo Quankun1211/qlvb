@@ -15,10 +15,6 @@ import Pagination from "./Pagination";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
 import { incomingService } from "@/services/apiService";
 
-// --- DUMMY DATA ---
-// --- DUMMY DATA ---
-// Moved into component for state management
-
 const mockAttachments = [
   "CV_Don_doc_nhac_viec_2408-baa95e06699b4d5087b04ee49e5a2dbc.docx",
   "cv_don_doc_nhac_viec_2408-baa95e06699b4d5087b04ee4_2408.signed.pdf",
@@ -63,6 +59,10 @@ export default function VanBanDenPage() {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // --- THÊM STATE ĐỂ LƯU ID CỦA VĂN BẢN ĐANG ĐƯỢC CHỌN ---
+  const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
+
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [showDocMenu, setShowDocMenu] = useState(false);
   const [zoom, setZoom] = useState(100);
@@ -81,8 +81,6 @@ export default function VanBanDenPage() {
     );
   };
 
-
-
   const getPageTitle = () => {
     switch (slug) {
       case "toan-bo-van-ban-den-don-vi": return "Danh sách toàn bộ văn bản đến Đơn vị";
@@ -97,7 +95,7 @@ export default function VanBanDenPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (slug !== 'toan-bo-van-ban-den-don-vi' && slug) return; // Only fetch for the main page
+    if (slug !== 'toan-bo-van-ban-den-don-vi' && slug) return;
     const fetchData = async () => {
       setIsLoading(true);
       try {
@@ -123,7 +121,7 @@ export default function VanBanDenPage() {
             trichYeu: item.summary || "Không có trích yếu",
             isHoaToc: item.urgencyLevel === "Hỏa tốc",
             ngayDen: formatDate(item.receivedDate),
-            hanXuLy: formatDate(item.dueAt) || "Chưa cập nhật", // dueAt might not exist in backend yet
+            hanXuLy: formatDate(item.dueAt) || "Chưa cập nhật",
             coQuan: item.issuingAgency || "Chưa rõ",
             chuTri: item.handlingUnit || "Chưa rõ",
             trangThai: statusMap[item.status] || item.status
@@ -303,7 +301,10 @@ export default function VanBanDenPage() {
                       <div>
                         <span 
                           className="text-[#005fb8] font-medium leading-relaxed cursor-pointer hover:underline"
-                          onClick={() => setShowDetailModal(true)}
+                          onClick={() => {
+                            setSelectedDocId(row.id);
+                            setShowDetailModal(true);
+                          }}
                         >
                           {row.trichYeu}
                         </span>
@@ -338,7 +339,14 @@ export default function VanBanDenPage() {
                     </span>
                   </td>
                   <td className="p-2 text-center align-top pt-3">
-                    <button onClick={() => setShowAttachModal(true)} className="text-gray-600 hover:text-black transition-colors">
+                    {/* --- CẬP NHẬT Ở ĐÂY: LƯU ID KHI CLICK ICON FILE & MỞ MODAL ĐÍNH KÈM --- */}
+                    <button 
+                      onClick={() => {
+                        setSelectedDocId(row.id);
+                        setShowAttachModal(true);
+                      }} 
+                      className="text-gray-600 hover:text-black transition-colors"
+                    >
                       <FileText className="w-4 h-4 mx-auto" />
                     </button>
                   </td>
@@ -364,91 +372,14 @@ export default function VanBanDenPage() {
       </div>
 
 
-      {/* --- ADVANCED SEARCH MODAL --- */}
-      {showSearchModal && renderModal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setShowSearchModal(false)}>
-          <div className="bg-white rounded shadow-xl w-[1000px] max-w-[95vw] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800">Tìm kiếm nâng cao</h2>
-              <button onClick={() => setShowSearchModal(false)} className="text-gray-900 hover:text-gray-900">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-8">
-              <div className="grid grid-cols-[160px_1fr] gap-y-5 gap-x-6 items-center text-[14px]">
-
-                <div className="text-right font-semibold text-gray-900">Số ký hiệu</div>
-                <div><input type="text" placeholder="Nhập số ký hiệu" className="w-full border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900 placeholder:text-gray-700" /></div>
-
-                <div className="text-right font-semibold text-gray-900">Số đến</div>
-                <div><input type="number" defaultValue={0} className="w-full border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900 placeholder:text-gray-700" /></div>
-
-                <div className="text-right font-semibold text-gray-900 self-start mt-2">Trích yếu</div>
-                <div><textarea placeholder="Nhập trích yếu" rows={4} className="w-full border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none resize-none text-gray-900 placeholder:text-gray-700" /></div>
-
-                {/* Split Row */}
-                <div className="text-right font-semibold text-gray-900">Chọn cơ quan ban hành</div>
-                <div className="flex gap-6">
-                  <select className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900 font-medium bg-white">
-                    <option value="">Nhập tên cơ quan ban hành...</option>
-                    <option value="1">Tỉnh ủy Quảng Ngãi (Nội tỉnh)</option>
-                    <option value="2">Văn phòng tỉnh ủy Quảng Ngãi (Nội tỉnh)</option>
-                    <option value="3">Phòng Nghiệp vụ và tổ chức thi hành án dân sự</option>
-                    <option value="4">Ngân hàng Phát triển Việt Nam</option>
-                    <option value="5">Cơ quan báo và phát thanh, truyền hình TPHCM</option>
-                    <option value="6">Đài Truyền hình Việt Nam</option>
-                  </select>
-                  <div className="flex items-center gap-4 flex-1">
-                    <span className="font-semibold text-gray-900 whitespace-nowrap">Sổ công văn</span>
-                    <select className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900 font-medium bg-white">
-                      <option value="">Chọn sổ công văn</option>
-                      <option value="0">Sổ công văn</option>
-                      <option value="1">Sổ công văn đến thường</option>
-                      <option value="2">Văn bản đến trong Bộ</option>
-                      <option value="3">Văn bản đến ngoài Bộ</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="text-right font-semibold text-gray-900">Ngày đến</div>
-                <div className="flex gap-6">
-                  <div className="flex-1 flex gap-3">
-                    <input type="date" className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900" />
-                    <input type="date" className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900" />
-                  </div>
-                  <div className="flex items-center gap-4 flex-1">
-                    <span className="font-semibold text-gray-900 whitespace-nowrap ml-6">Hạn xử lý</span>
-                    <div className="flex-1 flex gap-3">
-                      <input type="date" className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900" />
-                      <input type="date" className="flex-1 border border-gray-300 rounded px-3 py-2 focus:border-[#005fb8] focus:outline-none text-gray-900" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right font-semibold text-gray-900">Bóc bì</div>
-                <div><input type="checkbox" className="rounded w-4 h-4 border-gray-300 focus:ring-[#005fb8] text-[#005fb8]" /></div>
-              </div>
-            </div>
-
-            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
-              <button className="flex items-center px-5 py-2 bg-[#0078d4] hover:bg-[#005fb8] text-white rounded text-[14px] font-semibold transition-colors">
-                <Search className="w-4 h-4 mr-2" /> Tìm kiếm
-              </button>
-              <button onClick={() => setShowSearchModal(false)} className="flex items-center px-5 py-2 bg-[#ffc107] hover:bg-[#e0a800] text-black rounded text-[14px] font-semibold transition-colors">
-                <X className="w-4 h-4 mr-2" /> Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* --- ATTACHMENT MODAL --- */}
       <AttachmentModal 
         isOpen={showAttachModal} 
         onClose={() => setShowAttachModal(false)}
         onPreview={(file) => setPreviewFile(file)}
         attachments={mockAttachments}
+        // Truyền thêm id văn bản xuống component modal nếu cần thiết:
+        // documentId={selectedDocId} 
       />
 
       {/* --- DOCUMENT PREVIEW MODAL --- */}
@@ -462,6 +393,7 @@ export default function VanBanDenPage() {
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
         title={getPageTitle().replace("Danh sách ", "Chi tiết ")}
+        documentId={selectedDocId}
       />
 
     </div>

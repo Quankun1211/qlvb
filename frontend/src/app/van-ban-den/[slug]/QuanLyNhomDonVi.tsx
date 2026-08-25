@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Folder, ChevronRight, ChevronDown, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight as RightIcon, ChevronsRight } from "lucide-react";
 import Pagination from "./Pagination";
-import { frequentGroupService, masterDataService } from "@/services/apiService";
+import { frequentGroupService, masterDataService, unitService } from "@/services/apiService";
 
 export default function QuanLyNhomDonVi() {
   const [mounted, setMounted] = useState(false);
@@ -64,10 +64,10 @@ export default function QuanLyNhomDonVi() {
   // API Data is now fetched into states
 
 
-  const [selectedUnits, setSelectedUnits] = useState<{id: string, name: string}[]>([]);
+  const [selectedUnits, setSelectedUnits] = useState<{ id: string, name: string }[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<string[]>(['bng']);
   const [treeSearchKeyword, setTreeSearchKeyword] = useState("");
-  
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -76,7 +76,7 @@ export default function QuanLyNhomDonVi() {
     setExpandedNodes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const handleAddUnit = (child: {id: string, name: string}) => {
+  const handleAddUnit = (child: { id: string, name: string }) => {
     if (!selectedUnits.some(u => u.id === child.id)) {
       setSelectedUnits([...selectedUnits, child]);
     }
@@ -85,7 +85,7 @@ export default function QuanLyNhomDonVi() {
   const handleRemoveUnit = (id: string) => {
     setSelectedUnits(prev => prev.filter(u => u.id !== id));
   };
-  
+
   useEffect(() => {
     // Reset to page 1 if items length drops below current page threshold
     const maxPages = Math.max(1, Math.ceil(selectedUnits.length / pageSize));
@@ -103,7 +103,7 @@ export default function QuanLyNhomDonVi() {
   const filteredPhongBan = departments.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
   const filteredNguoiDung = users.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()) || (c.account && c.account.toLowerCase().includes(treeSearchKeyword.toLowerCase())));
   const filteredLienThong = linkedUnits.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
-  
+
   let currentListToSelectAll: any[] = [];
   if (addForm.phanLoaiNhom === 'Liên thông') {
     currentListToSelectAll = filteredLienThong;
@@ -112,9 +112,9 @@ export default function QuanLyNhomDonVi() {
     else if (addForm.phanLoaiDuLieu === 'Người dùng') currentListToSelectAll = filteredNguoiDung;
     else currentListToSelectAll = filteredTreeChildren;
   }
-  
+
   const isAllSelected = currentListToSelectAll.length > 0 && currentListToSelectAll.every(c => selectedUnits.some(u => u.id === c.id));
-  
+
   const [leftCurrentPage, setLeftCurrentPage] = useState(1);
   const [leftPageSize, setLeftPageSize] = useState(10);
 
@@ -145,9 +145,9 @@ export default function QuanLyNhomDonVi() {
             <button onClick={() => setLeftCurrentPage(1)} disabled={leftCurrentPage === 1} className="px-1.5 py-1 hover:bg-gray-100 border-r border-gray-300 text-[#005fb8] focus:outline-none disabled:text-gray-400"><ChevronsLeft className="w-3.5 h-3.5" /></button>
             <button onClick={() => setLeftCurrentPage(p => Math.max(1, p - 1))} disabled={leftCurrentPage === 1} className="px-1.5 py-1 hover:bg-gray-100 border-r border-gray-300 text-[#005fb8] focus:outline-none disabled:text-gray-400"><ChevronLeft className="w-3.5 h-3.5" /></button>
             {pages.map(p => (
-              <button 
-                key={p} 
-                onClick={() => setLeftCurrentPage(p)} 
+              <button
+                key={p}
+                onClick={() => setLeftCurrentPage(p)}
                 className={`px-2.5 py-1 border-r border-gray-300 focus:outline-none ${p === leftCurrentPage ? 'text-[#005fb8] font-bold' : 'text-[#005fb8] hover:bg-gray-50'}`}
               >
                 {p}
@@ -156,7 +156,7 @@ export default function QuanLyNhomDonVi() {
             <button onClick={() => setLeftCurrentPage(p => Math.min(leftMaxPages, p + 1))} disabled={leftCurrentPage === leftMaxPages} className="px-1.5 py-1 hover:bg-gray-100 border-r border-gray-300 text-[#005fb8] focus:outline-none disabled:text-gray-400"><RightIcon className="w-3.5 h-3.5" /></button>
             <button onClick={() => setLeftCurrentPage(leftMaxPages)} disabled={leftCurrentPage === leftMaxPages} className="px-1.5 py-1 hover:bg-gray-100 text-[#005fb8] focus:outline-none disabled:text-gray-400"><ChevronsRight className="w-3.5 h-3.5" /></button>
           </div>
-          <select 
+          <select
             value={leftPageSize}
             onChange={(e) => { setLeftPageSize(Number(e.target.value)); setLeftCurrentPage(1); }}
             className="border border-gray-300 rounded px-1.5 py-1 outline-none text-gray-900 bg-white"
@@ -210,7 +210,7 @@ export default function QuanLyNhomDonVi() {
     setIsLoading(true);
     try {
       const res = await frequentGroupService.getAll(0, 1000);
-      
+
       const mapped = (res.content || []).map((item: any, index: number) => ({
         id: item.id,
         stt: index + 1,
@@ -250,8 +250,8 @@ export default function QuanLyNhomDonVi() {
         description: addForm.moTa,
         documentClassification: addForm.phanLoaiNhom === 'Liên thông' ? 'INTERCONNECTED' : 'INTERNAL',
         groupType: addForm.phanLoaiNhom === 'Liên thông' ? 'UNIT' : (
-          addForm.phanLoaiDuLieu === 'Phòng ban' ? 'DEPARTMENT' : 
-          addForm.phanLoaiDuLieu === 'Người dùng' ? 'USER' : 'UNIT'
+          addForm.phanLoaiDuLieu === 'Phòng ban' ? 'DEPARTMENT' :
+            addForm.phanLoaiDuLieu === 'Người dùng' ? 'USER' : 'UNIT'
         ),
         memberIds: selectedUnits.map(u => u.id)
       };
@@ -263,7 +263,7 @@ export default function QuanLyNhomDonVi() {
         await frequentGroupService.create(payload);
         alert("Đã thêm nhóm thành công!");
       }
-      
+
       setShowAddModal(false);
       fetchFrequentGroups();
     } catch (err: any) {
@@ -282,27 +282,27 @@ export default function QuanLyNhomDonVi() {
 
   const [mainCurrentPage, setMainCurrentPage] = useState(1);
   const [mainPageSize, setMainPageSize] = useState(10);
-  
+
   useEffect(() => {
     const max = Math.max(1, Math.ceil(filteredData.length / mainPageSize));
     if (mainCurrentPage > max) setMainCurrentPage(max);
   }, [filteredData.length, mainPageSize, mainCurrentPage]);
-  
+
   const mainPaginatedData = filteredData.slice((mainCurrentPage - 1) * mainPageSize, mainCurrentPage * mainPageSize);
 
   return (
     <div className="w-full min-h-full bg-white shadow-sm border border-gray-200 flex flex-col">
       <div className="p-4">
         <h1 className="text-[22px] font-normal text-gray-800 mb-3">Danh sách nhóm</h1>
-        
+
         <div className="flex justify-between items-center mb-4">
           <button onClick={handleOpenAddModal} className="flex items-center px-4 py-1.5 bg-[#0078d4] hover:bg-[#005fb8] text-white rounded text-[13px] font-semibold transition-colors">
             <Plus className="w-4 h-4 mr-1.5" /> Thêm mới
           </button>
-          
+
           <div className="flex gap-2 text-[13px]">
-            <select 
-              value={phanLoai} 
+            <select
+              value={phanLoai}
               onChange={(e) => setPhanLoai(e.target.value)}
               className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white min-w-[160px]"
             >
@@ -310,9 +310,9 @@ export default function QuanLyNhomDonVi() {
               <option value="Nội bộ">Nội bộ</option>
               <option value="Liên thông">Liên thông</option>
             </select>
-            
-            <select 
-              value={loaiNhom} 
+
+            <select
+              value={loaiNhom}
               onChange={(e) => setLoaiNhom(e.target.value)}
               className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white min-w-[140px]"
             >
@@ -321,13 +321,13 @@ export default function QuanLyNhomDonVi() {
               <option value="Phòng ban">Phòng ban</option>
               <option value="Người dùng">Người dùng</option>
             </select>
-            
-            <input 
-              type="text" 
-              placeholder="Nhập vào từ khóa tìm kiếm" 
+
+            <input
+              type="text"
+              placeholder="Nhập vào từ khóa tìm kiếm"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              className="w-[220px] border border-gray-300 rounded px-3 py-1.5 text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-[#005fb8]" 
+              className="w-[220px] border border-gray-300 rounded px-3 py-1.5 text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-[#005fb8]"
             />
           </div>
         </div>
@@ -376,13 +376,13 @@ export default function QuanLyNhomDonVi() {
               )}
             </tbody>
           </table>
-          
-          <Pagination 
-            currentPage={mainCurrentPage} 
-            pageSize={mainPageSize} 
-            totalItems={filteredData.length} 
-            onPageChange={setMainCurrentPage} 
-            onPageSizeChange={(s) => { setMainPageSize(s); setMainCurrentPage(1); }} 
+
+          <Pagination
+            currentPage={mainCurrentPage}
+            pageSize={mainPageSize}
+            totalItems={filteredData.length}
+            onPageChange={setMainCurrentPage}
+            onPageSizeChange={(s) => { setMainPageSize(s); setMainCurrentPage(1); }}
           />
         </div>
       </div>
@@ -405,17 +405,17 @@ export default function QuanLyNhomDonVi() {
               <div className="grid grid-cols-2 gap-6 mb-4 shrink-0">
                 <div>
                   <label className="block mb-1.5">Tên nhóm(<span className="text-red-500">*</span>)</label>
-                  <input type="text" placeholder="Nhập tiêu đề" value={addForm.tenNhom} onChange={e => setAddForm({...addForm, tenNhom: e.target.value})} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none" />
+                  <input type="text" placeholder="Nhập tiêu đề" value={addForm.tenNhom} onChange={e => setAddForm({ ...addForm, tenNhom: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block mb-1.5">Tên viết tắt</label>
-                  <input type="text" placeholder="Nhập tên viết tắt" value={addForm.tenVietTat} onChange={e => setAddForm({...addForm, tenVietTat: e.target.value})} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none" />
+                  <input type="text" placeholder="Nhập tên viết tắt" value={addForm.tenVietTat} onChange={e => setAddForm({ ...addForm, tenVietTat: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none" />
                 </div>
               </div>
 
               <div className="mb-4 shrink-0">
                 <label className="block mb-1.5">Mô tả ngắn</label>
-                <textarea placeholder="Nhập mô tả ngắn" rows={3} value={addForm.moTa} onChange={e => setAddForm({...addForm, moTa: e.target.value})} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none resize-none" />
+                <textarea placeholder="Nhập mô tả ngắn" rows={3} value={addForm.moTa} onChange={e => setAddForm({ ...addForm, moTa: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none resize-none" />
               </div>
 
               <div className="grid grid-cols-2 gap-6 mb-6 shrink-0">
@@ -423,10 +423,10 @@ export default function QuanLyNhomDonVi() {
                   <label className="block mb-2 font-medium">Phân loại nhóm:</label>
                   <div className="flex gap-6">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="phanLoaiNhom" value="Nội bộ" checked={addForm.phanLoaiNhom === 'Nội bộ'} onChange={e => setAddForm({...addForm, phanLoaiNhom: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Nội bộ
+                      <input type="radio" name="phanLoaiNhom" value="Nội bộ" checked={addForm.phanLoaiNhom === 'Nội bộ'} onChange={e => setAddForm({ ...addForm, phanLoaiNhom: e.target.value })} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Nội bộ
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="phanLoaiNhom" value="Liên thông" checked={addForm.phanLoaiNhom === 'Liên thông'} onChange={e => setAddForm({...addForm, phanLoaiNhom: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Liên thông
+                      <input type="radio" name="phanLoaiNhom" value="Liên thông" checked={addForm.phanLoaiNhom === 'Liên thông'} onChange={e => setAddForm({ ...addForm, phanLoaiNhom: e.target.value })} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Liên thông
                     </label>
                   </div>
                 </div>
@@ -435,13 +435,13 @@ export default function QuanLyNhomDonVi() {
                     <label className="block mb-2 font-medium">Phân loại dữ liệu:</label>
                     <div className="flex gap-6">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="phanLoaiDuLieu" value="Đơn vị" checked={addForm.phanLoaiDuLieu === 'Đơn vị'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Đơn vị
+                        <input type="radio" name="phanLoaiDuLieu" value="Đơn vị" checked={addForm.phanLoaiDuLieu === 'Đơn vị'} onChange={e => setAddForm({ ...addForm, phanLoaiDuLieu: e.target.value })} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Đơn vị
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="phanLoaiDuLieu" value="Phòng ban" checked={addForm.phanLoaiDuLieu === 'Phòng ban'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Phòng ban
+                        <input type="radio" name="phanLoaiDuLieu" value="Phòng ban" checked={addForm.phanLoaiDuLieu === 'Phòng ban'} onChange={e => setAddForm({ ...addForm, phanLoaiDuLieu: e.target.value })} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Phòng ban
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="phanLoaiDuLieu" value="Người dùng" checked={addForm.phanLoaiDuLieu === 'Người dùng'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Người dùng
+                        <input type="radio" name="phanLoaiDuLieu" value="Người dùng" checked={addForm.phanLoaiDuLieu === 'Người dùng'} onChange={e => setAddForm({ ...addForm, phanLoaiDuLieu: e.target.value })} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Người dùng
                       </label>
                     </div>
                   </div>
@@ -449,7 +449,7 @@ export default function QuanLyNhomDonVi() {
               </div>
 
               <p className="mb-2 shrink-0">Cây danh sách</p>
-              
+
               {/* Split Pane */}
               <div className="flex-1 flex border border-gray-300 rounded overflow-hidden min-h-[300px]">
                 {/* Left Pane */}
@@ -463,7 +463,7 @@ export default function QuanLyNhomDonVi() {
                     </div>
                     <input type="text" placeholder="Nhập vào từ khóa tìm kiếm" value={treeSearchKeyword} onChange={e => setTreeSearchKeyword(e.target.value)} className="w-[180px] border border-gray-300 rounded px-2 py-1.5 text-[12px] focus:border-[#005fb8] focus:outline-none" />
                   </div>
-                  
+
                   <div className={`flex-1 flex flex-col overflow-hidden custom-scrollbar ${(addForm.phanLoaiNhom === 'Liên thông' || addForm.phanLoaiDuLieu === 'Người dùng') ? '' : 'p-3'}`}>
                     {/* Tree Root - For Đơn Vị */}
                     {addForm.phanLoaiNhom === 'Nội bộ' && addForm.phanLoaiDuLieu === 'Đơn vị' && (
@@ -475,7 +475,7 @@ export default function QuanLyNhomDonVi() {
                           <Folder className="w-4 h-4" fill="#facc15" color="#facc15" />
                           <span className="text-[13.5px]">Bộ ngoại giao</span>
                         </div>
-                        
+
                         {/* Tree Children */}
                         {expandedNodes.includes('bng') && (
                           <div className="ml-7 flex flex-col gap-3 pb-3">
@@ -521,7 +521,7 @@ export default function QuanLyNhomDonVi() {
                         })}
                       </div>
                     )}
-                    
+
                     {/* For Người dùng */}
                     {addForm.phanLoaiNhom === 'Nội bộ' && addForm.phanLoaiDuLieu === 'Người dùng' && (
                       <div className="flex flex-col h-full overflow-hidden w-full">
@@ -606,7 +606,7 @@ export default function QuanLyNhomDonVi() {
                       Bỏ chọn tất cả
                     </button>
                   </div>
-                  
+
                   <div className="flex-1 overflow-auto custom-scrollbar bg-gray-50/50 p-2">
                     <table className="w-full border-collapse bg-white">
                       <thead>
@@ -631,7 +631,7 @@ export default function QuanLyNhomDonVi() {
                       </tbody>
                     </table>
                   </div>
-                  
+
                   {/* Pagination Mock */}
                   <div className="border-t border-gray-200 px-3 py-2 flex justify-between items-center bg-white text-[12px] shrink-0">
                     <div className="flex items-center gap-3">
@@ -642,7 +642,7 @@ export default function QuanLyNhomDonVi() {
                         <button onClick={() => setCurrentPage(p => Math.min(maxPages, p + 1))} disabled={currentPage === maxPages} className="px-1.5 py-1 hover:bg-gray-100 border-r border-gray-300 text-gray-600 focus:outline-none disabled:opacity-50"><RightIcon className="w-3 h-3" /></button>
                         <button onClick={() => setCurrentPage(maxPages)} disabled={currentPage === maxPages} className="px-1.5 py-1 hover:bg-gray-100 text-gray-600 focus:outline-none disabled:opacity-50"><ChevronsRight className="w-3 h-3" /></button>
                       </div>
-                      <select 
+                      <select
                         value={pageSize}
                         onChange={(e) => {
                           setPageSize(Number(e.target.value));
@@ -659,8 +659,8 @@ export default function QuanLyNhomDonVi() {
                       </select>
                     </div>
                     <div className="text-gray-600">
-                      {totalSelected > 0 
-                        ? `${startIndex + 1}-${Math.min(startIndex + pageSize, totalSelected)} / ${totalSelected}` 
+                      {totalSelected > 0
+                        ? `${startIndex + 1}-${Math.min(startIndex + pageSize, totalSelected)} / ${totalSelected}`
                         : '0-0 / 0'}
                     </div>
                   </div>

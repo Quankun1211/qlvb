@@ -31,6 +31,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return response.json();
 }
 
+export const fileNameUrl = {
+  getFileName: (fileName: string) => fetchWithAuth(`/auth/presigned-url?fileName=${fileName}`)
+}
 // ---------------------------
 // 1. Văn bản dự thảo (Drafts)
 // ---------------------------
@@ -115,4 +118,11 @@ export const outgoingService = {
   getPublished: (page = 0, size = 20) => fetchWithAuth(`/outgoing-documents/published?page=${page}&size=${size}`),
   getMyPublished: (page = 0, size = 20) => fetchWithAuth(`/outgoing-documents/published/my?page=${page}&size=${size}`),
   getDetail: (id: number) => fetchWithAuth(`/outgoing-documents/${id}`),
+};
+
+// ---------------------------
+// 8. Unit
+// ---------------------------
+export const unitService = {
+  getAll: () => fetchWithAuth(`/units/tree`),
 };
