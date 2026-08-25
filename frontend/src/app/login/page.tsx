@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [generatedCaptcha, setGeneratedCaptcha] = useState("");
 
   useEffect(() => {
-    // Generate a random captcha for demo purposes
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let c = "";
     for (let i = 0; i < 5; i++) {
@@ -23,7 +22,7 @@ export default function LoginPage() {
     setGeneratedCaptcha(c);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -37,10 +36,30 @@ export default function LoginPage() {
       return;
     }
 
-    if (username === "admin" && password === "123456") {
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        throw new Error("Tài khoản hoặc mật khẩu không chính xác.");
+      }
+
+      const data = await response.json().catch(() => ({}));
+
       localStorage.setItem("isLoggedIn", "true");
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
       router.push("/");
-    } else {
+    } catch (err) {
       setError("Tài khoản hoặc mật khẩu không chính xác.");
     }
   };
@@ -57,7 +76,6 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-blue-100/30 backdrop-blur-[2px]"></div>
       
       <div className="relative z-10 flex w-[900px] h-[500px] bg-white rounded-3xl shadow-2xl overflow-hidden">
-        {/* Left Panel */}
         <div className="w-1/2 relative h-full">
           <Image 
             src="/asset/login-logo-2.png"
@@ -68,7 +86,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Right Panel */}
         <div className="w-1/2 p-10 flex flex-col justify-center bg-white">
           <h2 className="text-2xl font-bold text-gray-800 text-center uppercase mb-8">
             Đăng nhập tài khoản
@@ -146,7 +163,6 @@ export default function LoginPage() {
                   }}
                   title="Nhấn để đổi mã"
                 >
-                  {/* Fake noise lines */}
                   <div className="absolute inset-0 opacity-20" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 10px, #005fb8 10px, #005fb8 11px)" }}></div>
                   <div className="absolute inset-0 opacity-20" style={{ background: "repeating-linear-gradient(-45deg, transparent, transparent 15px, #005fb8 15px, #005fb8 16px)" }}></div>
                   <span className="relative z-10 mix-blend-multiply filter drop-shadow-sm">{generatedCaptcha}</span>
