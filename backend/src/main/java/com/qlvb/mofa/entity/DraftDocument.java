@@ -33,6 +33,10 @@ public class DraftDocument {
     private Document document;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "document_type_id", nullable = false)
+    private DocumentType documentType;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "drafted_by", nullable = false)
     private User draftedBy;
 

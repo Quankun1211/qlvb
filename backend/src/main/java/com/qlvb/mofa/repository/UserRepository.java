@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             List<Long> ids,
             Byte status
     );
+
+    List<User> findByDepartmentIdAndStatusOrderByFullNameAsc(Long departmentId, Byte status);
 }

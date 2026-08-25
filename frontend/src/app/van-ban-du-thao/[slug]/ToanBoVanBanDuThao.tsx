@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
+import ThemMoiDuThaoModal from "@/components/shared/ThemMoiDuThaoModal";
 import { draftService } from "@/services/apiService";
 
 const allStatuses = [
@@ -461,7 +462,7 @@ export default function ToanBoVanBanDuThao() {
       )}
 
       {/* MODAL THÊM MỚI DỰ THẢO */}
-      {showAddModal && renderModal(
+      {false && showAddModal && renderModal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => setShowAddModal(false)}>
           <div className="bg-white rounded-lg shadow-2xl w-[900px] flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
@@ -700,6 +701,12 @@ export default function ToanBoVanBanDuThao() {
           </div>
         </div>
       )}
+
+      <ThemMoiDuThaoModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => window.location.reload()}
+      />
 
       {/* --- DOCUMENT DETAIL MODAL --- */}
       <VanBanDuThaoDetailModal 

@@ -13,4 +13,6 @@ public interface DepartmentRepository
             List<Long> ids,
             Byte status
     );
+
+    List<Department> findByUnitIdAndStatusOrderByNameAsc(Long unitId, Byte status);
 }

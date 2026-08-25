@@ -7,7 +7,10 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  headers.set("Content-Type", "application/json");
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const response = await fetch(`${BASE_URL}${url}`, {
     ...options,
@@ -36,6 +39,12 @@ export const draftService = {
   getDraftingOrOpinion: (page = 0, size = 20) => fetchWithAuth(`/draft-documents/drafting-or-opinion?page=${page}&size=${size}`),
   getApproved: (page = 0, size = 20) => fetchWithAuth(`/draft-documents/approved?page=${page}&size=${size}`),
   getSuspended: (page = 0, size = 20) => fetchWithAuth(`/draft-documents/suspended?page=${page}&size=${size}`),
+  create: (data: unknown, files: File[], actionType = "SAVE_DRAFT") => {
+    const formData = new FormData();
+    formData.append("request", new Blob([JSON.stringify(data)], { type: "application/json" }));
+    files.forEach(file => formData.append("files", file));
+    return fetchWithAuth(`/draft-documents?actionType=${actionType}`, { method: "POST", body: formData });
+  },
 };
 
 // ---------------------------
@@ -94,6 +103,8 @@ export const masterDataService = {
   getUnits: (type?: string) => fetchWithAuth(`/master-data/units${type ? `?type=${type}` : ''}`),
   getDepartments: () => fetchWithAuth(`/master-data/departments`),
   getUsers: () => fetchWithAuth(`/master-data/users`),
+  getDocumentTypes: () => fetchWithAuth(`/master-data/document-types`),
+  getUnitDepartmentsWithUsers: (unitId: number) => fetchWithAuth(`/master-data/units/${unitId}/departments-with-users`),
 };
 
 // ---------------------------

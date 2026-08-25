@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 public class DraftDocumentResponse {
     private Long id;
+    private Long documentTypeId;
+    private String documentTypeName;
     private String subject; // Về việc
     private Long draftedById;
     private String draftedByName; // Người soạn (VD: Đỗ Văn Điển)
