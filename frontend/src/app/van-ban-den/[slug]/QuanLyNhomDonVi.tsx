@@ -3,11 +3,22 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Folder, ChevronRight, ChevronDown, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight as RightIcon, ChevronsRight } from "lucide-react";
 import Pagination from "./Pagination";
-import { frequentGroupService } from "@/services/apiService";
+import { frequentGroupService, masterDataService } from "@/services/apiService";
 
 export default function QuanLyNhomDonVi() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [internalUnits, setInternalUnits] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [linkedUnits, setLinkedUnits] = useState<any[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    masterDataService.getUnits("INTERNAL").then(setInternalUnits).catch(console.error);
+    masterDataService.getUnits("EXTERNAL").then(setLinkedUnits).catch(console.error);
+    masterDataService.getDepartments().then(setDepartments).catch(console.error);
+    masterDataService.getUsers().then(setUsers).catch(console.error);
+  }, []);
 
   const [phanLoai, setPhanLoai] = useState("");
   const [loaiNhom, setLoaiNhom] = useState("");
@@ -50,81 +61,8 @@ export default function QuanLyNhomDonVi() {
     setShowAddModal(true);
   };
 
-  const treeData = [
-    { id: 'bng', name: 'Bộ ngoại giao', children: [
-      { id: 'v_asean', name: 'Vụ ASEAN' },
-      { id: 'v_chau_au', name: 'Vụ Châu Âu' },
-      { id: 'v_chau_my', name: 'Vụ Châu Mỹ' },
-      { id: 'v_dong_bac_a', name: 'Vụ Đông Bắc Á' },
-      { id: 'v_dna', name: 'Vụ Đông Nam Á-Nam Á-Nam Thái Bình Dương' },
-      { id: 'v_td', name: 'Vụ Trung Đông-Châu Phi' },
-      { id: 'v_ngkt', name: 'Vụ Ngoại giao kinh tế' },
-      { id: 'v_csdn', name: 'Vụ Chính sách đối ngoại' },
-      { id: 'v_ngdp', name: 'Vụ Ngoại giao đa phương và các vấn đề quốc tế' },
-      { id: 'v_lp_duqt', name: 'Vụ Luật pháp và Điều ước quốc tế' },
-      { id: 'v_ttbc', name: 'Vụ Thông tin báo chí' },
-      { id: 'v_tccb', name: 'Vụ Tổ chức Cán bộ' },
-      { id: 'vp_b', name: 'Văn phòng Bộ' },
-      { id: 'c_cy_cntt', name: 'Cục Cơ yếu-Công nghệ thông tin' },
-      { id: 'c_nv_ngvh', name: 'Cục Ngoại vụ và Ngoại giao văn hóa' },
-      { id: 'c_ls', name: 'Cục Lãnh sự' },
-      { id: 'c_ltnn', name: 'Cục Lễ tân Nhà nước và Phiên dịch đối ngoại' },
-      { id: 'c_qttv', name: 'Cục Quản trị tài vụ' },
-      { id: 'hv_ng', name: 'Học viện Ngoại giao' },
-      { id: 'snv_hcm', name: 'Sở Ngoại vụ thành phố Hồ Chí Minh' },
-      { id: 'ubnn_nvnonn', name: 'Ủy ban Nhà nước về người Việt Nam ở nước ngoài' },
-      { id: 'ubbgqg', name: 'Ủy ban Biên giới quốc gia' },
-      { id: 'btg_vn', name: 'Báo Thế giới và Việt nam' },
-      { id: 'c_pvngd', name: 'Cục Phục vụ Ngoại giao đoàn' },
-      { id: 'ttvtdn_v75', name: 'Trung tâm Vận tải Đối ngoại V75' },
-      { id: 'bqlda_tsb', name: 'Ban Quản lý dự án Trụ sở Bộ' },
-      { id: 'cqdub', name: 'Cơ quan Đảng ủy Bộ' },
-      { id: 'dsq_argentina', name: 'Đại sứ quán Việt Nam tại Argentina' },
-      { id: 'dsq_aicap', name: 'Đại sứ quán Việt Nam tại Ai Cập' },
-      { id: 'dsq_ailen', name: 'Đại sứ quán Việt Nam tại Ai-len' },
-      { id: 'dsq_ando', name: 'Đại sứ quán Việt Nam tại Ấn Độ' },
-      { id: 'dsq_angola', name: 'Đại sứ quán Việt Nam tại Angola' },
-      { id: 'dsq_algerie', name: 'Đại sứ quán Việt Nam tại Algerie' },
-      { id: 'dsq_anh', name: 'Đại sứ quán Việt Nam tại Anh' },
-      { id: 'dsq_ao', name: 'Đại sứ quán Việt Nam tại Áo' },
-      { id: 'dsq_arapxeut', name: 'Đại sứ quán Việt Nam tại Ả-rập Xê-út' },
-      { id: 'dsq_balan', name: 'Đại sứ quán Việt Nam tại Ba Lan' },
-      { id: 'dsq_belarus', name: 'Đại sứ quán Việt Nam tại Belarus' },
-      { id: 'dsq_bi', name: 'Đại sứ quán Việt Nam tại Bỉ' },
-      { id: 'dsq_bodaonha', name: 'Đại sứ quán Việt Nam tại Bồ Đào Nha' },
-      { id: 'dsq_braxin', name: 'Đại sứ quán Việt Nam tại Braxin' },
-      { id: 'dsq_brunei', name: 'Đại sứ quán Việt Nam tại Brunei' },
-      { id: 'dsq_bulgaria', name: 'Đại sứ quán Việt Nam tại Bulgaria' },
-    ]}
-  ];
+  // API Data is now fetched into states
 
-  const phongBanData = [
-    { id: 'pb_vp', name: 'Văn phòng' },
-    { id: 'pb_ldb', name: 'Lãnh đạo bộ' },
-    { id: 'pb_dxb', name: 'Đội xe Bộ' },
-    { id: 'pb_kta', name: 'Khoa Tiếng Anh' },
-    { id: 'pb_pncth', name: 'Phòng Nghiên cứu - Tổng hợp' },
-    { id: 'pb_tthdbcnn', name: 'Trung tâm Hướng dẫn báo chí nước ngoài' },
-    { id: 'pb_pdnnd', name: 'Phòng Đối ngoại nhân dân' },
-    { id: 'pb_pvhtv', name: 'Phòng Văn hoá - Tiếng Việt' },
-  ];
-
-  const nguoiDungData = [
-    { id: 'nd_qt', name: 'Quản trị', account: 'NPH.QT' },
-    { id: 'nd_ngkt', name: 'Ngoại giao kinh tế', account: 'NPH.NGKT' },
-    { id: 'nd_ngct', name: 'Ngoại giao chính trị', account: 'NPH.NGCT' },
-    { id: 'nd_lx', name: 'Lái xe', account: 'NPH.LX' },
-    { id: 'nd_ntnthoa', name: 'Nguyễn Thị Ngọc Thoa', account: 'snv.ntnthoa' },
-    ...Array.from({ length: 2251 }, (_, i) => ({ id: `nd_dummy_${i}`, name: `Người dùng ${i+1}`, account: `user.${i+1}` }))
-  ];
-
-  const lienThongData = [
-    { id: 'lt_1', name: 'Hội Người cao tuổi tỉnh Lạng Sơn' },
-    { id: 'lt_2', name: 'Văn phòng - UBND thành phố Đà Nẵng' },
-    { id: 'lt_3', name: 'Hội Chữ thập đỏ Việt Nam' },
-    { id: 'lt_4', name: 'Viện Các Khoa học Trái đất' },
-    ...Array.from({ length: 120 }, (_, i) => ({ id: `lt_dummy_${i}`, name: `Cơ quan liên thông ${i+1}` }))
-  ];
 
   const [selectedUnits, setSelectedUnits] = useState<{id: string, name: string}[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<string[]>(['bng']);
@@ -161,10 +99,10 @@ export default function QuanLyNhomDonVi() {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedUnits = selectedUnits.slice(startIndex, startIndex + pageSize);
 
-  const filteredTreeChildren = treeData[0].children.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
-  const filteredPhongBan = phongBanData.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
-  const filteredNguoiDung = nguoiDungData.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()) || c.account.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
-  const filteredLienThong = lienThongData.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
+  const filteredTreeChildren = internalUnits.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
+  const filteredPhongBan = departments.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
+  const filteredNguoiDung = users.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()) || (c.account && c.account.toLowerCase().includes(treeSearchKeyword.toLowerCase())));
+  const filteredLienThong = linkedUnits.filter(c => c.name.toLowerCase().includes(treeSearchKeyword.toLowerCase()));
   
   let currentListToSelectAll: any[] = [];
   if (addForm.phanLoaiNhom === 'Liên thông') {
@@ -268,31 +206,70 @@ export default function QuanLyNhomDonVi() {
   const [apiData, setApiData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const fetchFrequentGroups = async () => {
+    setIsLoading(true);
+    try {
+      const res = await frequentGroupService.getAll(0, 1000);
+      
+      const mapped = (res.content || []).map((item: any, index: number) => ({
+        id: item.id,
+        stt: index + 1,
+        tenNhom: item.name || "Không có tên",
+        tenVietTat: item.shortName || "",
+        phanLoai: item.documentClassification === "INTERNAL" ? "Nội bộ" : "Liên thông",
+        loaiNhom: item.groupType === "DEPARTMENT" ? "Phòng ban" : item.groupType === "USER" ? "Người dùng" : "Đơn vị",
+        moTa: item.description || "",
+        trangThai: item.status === 1 ? "Hoạt động" : "Ngừng hoạt động"
+      }));
+      setApiData(mapped);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const res = await frequentGroupService.getAll(0, 1000);
-        
-        const mapped = (res.content || []).map((item: any, index: number) => ({
-          id: item.id,
-          stt: index + 1,
-          tenNhom: item.name || "Không có tên",
-          tenVietTat: item.shortName || "",
-          phanLoai: item.documentClassification === "INTERNAL" ? "Nội bộ" : "Liên thông",
-          loaiNhom: item.groupType === "DEPARTMENT" ? "Phòng ban" : item.groupType === "USER" ? "Người dùng" : "Đơn vị",
-          moTa: item.description || "",
-          trangThai: item.status === 1 ? "Hoạt động" : "Ngừng hoạt động"
-        }));
-        setApiData(mapped);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+    fetchFrequentGroups();
   }, []);
+
+  const handleSaveGroup = async () => {
+    if (!addForm.tenNhom) {
+      alert("Tên nhóm không được để trống");
+      return;
+    }
+    if (selectedUnits.length === 0) {
+      alert("Phải chọn ít nhất một thành viên");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: addForm.tenNhom,
+        shortName: addForm.tenVietTat,
+        description: addForm.moTa,
+        documentClassification: addForm.phanLoaiNhom === 'Liên thông' ? 'INTERCONNECTED' : 'INTERNAL',
+        groupType: addForm.phanLoaiNhom === 'Liên thông' ? 'UNIT' : (
+          addForm.phanLoaiDuLieu === 'Phòng ban' ? 'DEPARTMENT' : 
+          addForm.phanLoaiDuLieu === 'Người dùng' ? 'USER' : 'UNIT'
+        ),
+        memberIds: selectedUnits.map(u => u.id)
+      };
+
+      if (isEditMode) {
+        // Implement update API call when backend has it
+        alert("Tính năng cập nhật đang được hoàn thiện!");
+      } else {
+        await frequentGroupService.create(payload);
+        alert("Đã thêm nhóm thành công!");
+      }
+      
+      setShowAddModal(false);
+      fetchFrequentGroups();
+    } catch (err: any) {
+      alert(err.message || "Có lỗi xảy ra khi lưu!");
+    }
+  };
 
   const filteredData = apiData.filter(item => {
     if (phanLoai && item.phanLoai !== phanLoai) return false;
@@ -453,20 +430,22 @@ export default function QuanLyNhomDonVi() {
                     </label>
                   </div>
                 </div>
-                <div>
-                  <label className="block mb-2 font-medium">Phân loại dữ liệu:</label>
-                  <div className="flex gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="phanLoaiDuLieu" value="Đơn vị" checked={addForm.phanLoaiDuLieu === 'Đơn vị'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Đơn vị
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="phanLoaiDuLieu" value="Phòng ban" checked={addForm.phanLoaiDuLieu === 'Phòng ban'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Phòng ban
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="phanLoaiDuLieu" value="Người dùng" checked={addForm.phanLoaiDuLieu === 'Người dùng'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Người dùng
-                    </label>
+                {addForm.phanLoaiNhom === 'Nội bộ' && (
+                  <div>
+                    <label className="block mb-2 font-medium">Phân loại dữ liệu:</label>
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="phanLoaiDuLieu" value="Đơn vị" checked={addForm.phanLoaiDuLieu === 'Đơn vị'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Đơn vị
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="phanLoaiDuLieu" value="Phòng ban" checked={addForm.phanLoaiDuLieu === 'Phòng ban'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Phòng ban
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="phanLoaiDuLieu" value="Người dùng" checked={addForm.phanLoaiDuLieu === 'Người dùng'} onChange={e => setAddForm({...addForm, phanLoaiDuLieu: e.target.value})} className="w-3.5 h-3.5 text-[#005fb8] focus:ring-[#005fb8] border-gray-300" /> Người dùng
+                      </label>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <p className="mb-2 shrink-0">Cây danh sách</p>
@@ -691,7 +670,7 @@ export default function QuanLyNhomDonVi() {
             </div>
 
             <div className="px-5 py-3 border-t border-gray-200 bg-white flex justify-end gap-2 shrink-0">
-              <button onClick={() => { alert(isEditMode ? 'Đã cập nhật nhóm thành công!' : 'Đã thêm nhóm thành công!'); setShowAddModal(false); }} className="flex items-center px-5 py-2 bg-[#0078d4] hover:bg-[#005fb8] text-white rounded text-[13px] font-semibold transition-colors">
+              <button onClick={handleSaveGroup} className="flex items-center px-5 py-2 bg-[#0078d4] hover:bg-[#005fb8] text-white rounded text-[13px] font-semibold transition-colors">
                 <Plus className="w-4 h-4 mr-1.5" /> {isEditMode ? 'Cập nhật' : 'Thêm'}
               </button>
               <button onClick={() => setShowAddModal(false)} className="flex items-center px-5 py-2 bg-[#ffc107] hover:bg-[#e0a800] text-black rounded text-[13px] font-semibold transition-colors">

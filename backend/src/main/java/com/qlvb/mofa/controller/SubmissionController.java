@@ -4,7 +4,6 @@ import com.qlvb.mofa.dto.request.SubmissionCreateRequest;
 import com.qlvb.mofa.dto.request.SubmissionSearchRequest;
 import com.qlvb.mofa.dto.response.SubmissionDetailResponse;
 import com.qlvb.mofa.dto.response.SubmissionResponse;
-import com.qlvb.mofa.entity.Submission;
 import com.qlvb.mofa.service.SubmissionService;
 
 import lombok.RequiredArgsConstructor;
@@ -77,11 +76,11 @@ public class SubmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<Submission> createSubmission(
+    public ResponseEntity<SubmissionResponse> createSubmission(
             @RequestBody SubmissionCreateRequest request,
             @RequestParam(defaultValue = "SAVE_DRAFT") String actionType 
     ) {
-        Submission newSubmission = submissionService.createSubmission(request, actionType);
+        SubmissionResponse newSubmission = submissionService.createSubmission(request, actionType);
         return ResponseEntity.ok(newSubmission);
     }
 

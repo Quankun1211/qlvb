@@ -68,12 +68,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             .getContext()
                             .setAuthentication(authentication);
                 }
+            } else {
+                // Token không hợp lệ (hết hạn, sai chữ ký...) → trả 401 ngay
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Token không hợp lệ hoặc đã hết hạn\"}");
+                return;
             }
 
         } catch (Exception e) {
             System.err.println(
                     "JWT authentication failed: " + e.getMessage()
             );
+            // Trả 401 khi exception (token sai format, hết hạn,...)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"" + e.getMessage() + "\"}");
+            return;
         }
 
         filterChain.doFilter(request, response);

@@ -15,10 +15,11 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
       localStorage.removeItem("token");
       localStorage.removeItem("isLoggedIn");
       window.location.href = "/login";
+      return; // Dừng xử lý, tránh throw error gây console noise
     }
     const errorText = await response.text();
     throw new Error(errorText || "API Error");
@@ -65,6 +66,8 @@ export const submissionService = {
   getPublished: (page = 0, size = 20) => fetchWithAuth(`/submissions/published?page=${page}&size=${size}`),
   getSuspended: (page = 0, size = 20) => fetchWithAuth(`/submissions/suspended?page=${page}&size=${size}`),
   getReturned: (page = 0, size = 20) => fetchWithAuth(`/submissions/returned?page=${page}&size=${size}`),
+  create: (data: any, actionType = 'SAVE_DRAFT') =>
+    fetchWithAuth(`/submissions?actionType=${actionType}`, { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // ---------------------------
@@ -81,6 +84,16 @@ export const workRecordService = {
 // ---------------------------
 export const frequentGroupService = {
   getAll: (page = 0, size = 20) => fetchWithAuth(`/frequent-groups?page=${page}&size=${size}`),
+  create: (data: any) => fetchWithAuth(`/frequent-groups`, { method: "POST", body: JSON.stringify(data) }),
+};
+
+// ---------------------------
+// 8. Master Data
+// ---------------------------
+export const masterDataService = {
+  getUnits: (type?: string) => fetchWithAuth(`/master-data/units${type ? `?type=${type}` : ''}`),
+  getDepartments: () => fetchWithAuth(`/master-data/departments`),
+  getUsers: () => fetchWithAuth(`/master-data/users`),
 };
 
 // ---------------------------

@@ -41,6 +41,7 @@ public class SubmissionService {
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final com.qlvb.mofa.sercurity.SecurityUtils securityUtils;
 
     public Page<SubmissionResponse> getAll(
             SubmissionSearchRequest request,
@@ -270,7 +271,7 @@ public class SubmissionService {
     }
 
     @Transactional
-    public Submission createSubmission(SubmissionCreateRequest request, String actionType) {
+    public SubmissionResponse createSubmission(SubmissionCreateRequest request, String actionType) {
         // 1. Xác định trạng thái ban đầu dựa vào nút người dùng bấm
         SubmissionStatus initialStatus;
         String actionName;
@@ -280,10 +281,12 @@ public class SubmissionService {
                 initialStatus = SubmissionStatus.DRAFTING;
                 actionName = "CREATE_DRAFT";
                 break;
+            case "REQUEST_OPINION":          // frontend gửi REQUEST_OPINION
             case "SAVE_AND_REQUEST_OPINION":
                 initialStatus = SubmissionStatus.REQUESTING_OPINION;
                 actionName = "REQUEST_OPINION";
                 break;
+            case "SUBMIT":                   // frontend gửi SUBMIT
             case "SAVE_AND_SUBMIT":
                 initialStatus = SubmissionStatus.SUBMITTING_MINISTRY_LEADER;
                 actionName = "SUBMIT";
@@ -293,17 +296,25 @@ public class SubmissionService {
                 actionName = "CREATE";
         }
 
-        // 2. Map dữ liệu vào Entity Submission
+        // 2. Lấy user hiện tại từ SecurityContext (không cần frontend gửi draftedById)
+        Long currentUserId = securityUtils.getCurrentUserId();
+        com.qlvb.mofa.entity.User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng hiện tại"));
+
+        // 3. Map dữ liệu vào Entity Submission
         Submission submission = Submission.builder()
                 .submissionNumber(request.getSubmissionNumber() != null ? request.getSubmissionNumber() : generateSubmissionNumber())
                 .subject(request.getSubject())
                 .target(request.getTarget())
                 .submittedAt(request.getSubmittedAt() != null ? request.getSubmittedAt() : LocalDate.now())
                 .status(initialStatus)
-                .draftedBy(userRepository.findById(request.getDraftedById())
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy người soạn")))
-                .department(departmentRepository.findById(request.getDepartmentId())
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị")))
+                .draftedBy(currentUser)
+                // Department: lấy từ request nếu có, nếu không thì lấy từ user, nếu không có thì để null
+                .department(
+                    request.getDepartmentId() != null
+                        ? departmentRepository.findById(request.getDepartmentId()).orElse(currentUser.getDepartment())
+                        : currentUser.getDepartment()
+                )
                 .document(request.getDocumentId() != null ? documentRepository.findById(request.getDocumentId()).orElse(null) : null)
                 .build();
 
@@ -331,7 +342,9 @@ public class SubmissionService {
                 .build();
         submissionHistoryRepository.save(history);
 
-        return savedSubmission;
+        // Never serialize the entity directly: its lazy, bidirectional
+        // associations can produce an incomplete response body.
+        return toResponse(savedSubmission);
     }
 
     private String generateSubmissionNumber() {
