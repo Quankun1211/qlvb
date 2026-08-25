@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, X, Paperclip, FileDown, Search as SearchIcon, ArrowDownToLine, FileText, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import { AttachmentModal, PDFDetailModal, WordDetailModal } from "@/app/van-ban-den/[slug]/SharedModals";
-import { submissionService } from "@/services/apiService";
+import { outgoingService } from "@/services/apiService";
 
 const mockDonVi = ["Đơn vị đôn đốc", "Văn phòng Bộ", "Cục Cơ yếu-Công nghệ thông tin"];
 const mockNguoiSoan = ["Đậu Việt Đức", "Đỗ Văn Điển", "Lưu Anh Tuấn", "Lê Mai Phượng", "Kiều Việt Hùng"];
@@ -51,7 +51,7 @@ export default function VanBanDaPhatHanh() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const res = await submissionService.getPublished(0, 1000);
+        const res = await outgoingService.getPublished(0, 1000);
         
         const mapped = (res.content || []).map((item: any) => {
           const formatDate = (dateStr: string) => {
@@ -61,14 +61,14 @@ export default function VanBanDaPhatHanh() {
           };
           return {
             id: item.id,
-            soDi: item.documentNumber ? parseInt(item.documentNumber.split('/')[0]) || 0 : 0,
-            soKH: item.documentNumber || "Số KH",
-            ngayBH: formatDate(item.updatedAt || item.createdAt),
-            trichYeu: item.summary || "Không có trích yếu",
-            nguoiKy: item.approvedByName || "Lãnh đạo",
-            noiNhan: item.departmentName || "Chưa rõ",
+            soDi: item.outgoingNumber || "0",
+            soKH: item.referenceNumber || "",
+            ngayBH: formatDate(item.issueDate),
+            trichYeu: item.subject || "Không có trích yếu",
+            nguoiKy: item.signerName || "",
+            noiNhan: (item.recipientNames || []).join(", "),
             hasFile: true,
-            canBoSoanThao: item.draftedByName
+            canBoSoanThao: item.drafterName || ""
           };
         });
         setApiData(mapped);
@@ -178,11 +178,11 @@ export default function VanBanDaPhatHanh() {
           <tbody>
             {paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors text-gray-900">
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.soDi}</td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center text-gray-900 font-medium">{row.soKH}</td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.ngayBH}</td>
-                  <td className="py-2.5 px-3 border border-gray-300">
+                <tr key={index} className="hover:bg-gray-50 transition-colors text-gray-900 border-b border-gray-200">
+                  <td className="py-2.5 px-3 text-center">{row.soDi !== "0" ? row.soDi : ""}</td>
+                  <td className="py-2.5 px-3 text-center text-[#005fb8] font-medium hover:underline cursor-pointer">{row.soKH}</td>
+                  <td className="py-2.5 px-3 text-center text-gray-600">{row.ngayBH}</td>
+                  <td className="py-2.5 px-3">
                     <span 
                       className="text-[#005fb8] hover:underline cursor-pointer font-medium"
                       onClick={() => openDetailModal(row)}
@@ -190,9 +190,11 @@ export default function VanBanDaPhatHanh() {
                       {row.trichYeu}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.nguoiKy}</td>
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.noiNhan}</td>
-                  <td className="py-2.5 px-2 border border-gray-300 text-center">
+                  <td className="py-2.5 px-3 text-center">{row.nguoiKy}</td>
+                  <td className="py-2.5 px-3 text-center">
+                    <span className="line-clamp-2" title={row.noiNhan}>{row.noiNhan}</span>
+                  </td>
+                  <td className="py-2.5 px-2 text-center">
                     {row.hasFile && (
                       <button 
                         onClick={() => setShowAttachmentModal(true)}

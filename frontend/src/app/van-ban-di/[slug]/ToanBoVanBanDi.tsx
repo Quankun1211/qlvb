@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Search, RefreshCcw, X, Paperclip, FileDown, Search as SearchIcon, ArrowDownToLine, FileText, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import { Search, RefreshCcw, X, Paperclip, FileDown, Search as SearchIcon, ArrowDownToLine, FileText, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Loader2 } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import { AttachmentModal, PDFDetailModal, WordDetailModal } from "@/app/van-ban-den/[slug]/SharedModals";
+import { outgoingService } from "@/services/apiService";
 
 const mockDonVi = ["Đơn vị đôn đốc", "Văn phòng Bộ", "Cục Cơ yếu-Công nghệ thông tin"];
 const mockNguoiSoan = ["Đậu Việt Đức", "Đỗ Văn Điển", "Lưu Anh Tuấn", "Lê Mai Phượng", "Kiều Việt Hùng"];
@@ -13,7 +14,42 @@ const mockDonViLienThong = ["UBND TP Hà Nội", "Bộ Thông tin và Truyền t
 
 export default function ToanBoVanBanDi() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await outgoingService.getAll(0, 1000);
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            soDi: item.outgoingNumber || "0",
+            soKH: item.referenceNumber || "",
+            ngayBH: formatDate(item.issueDate),
+            trichYeu: item.subject || "Không có trích yếu",
+            canBoSoanThao: item.drafterName || "",
+            nguoiKy: item.signerName || "",
+            noiNhan: (item.recipientNames || []).join(", "),
+            hasFile: true // Mock file presence for now
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const searchParams = useSearchParams();
   const queryQ = searchParams.get("q") || "";
@@ -55,20 +91,7 @@ export default function ToanBoVanBanDi() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const dummyData: any[] = [
-    { soDi: 0, soKH: "", ngayBH: "25/08/2026", trichYeu: "Phúc 3704/LPQT về cung cấp thông tin dự án Luật Định danh và xác thực điện tử", canBoSoanThao: "Đậu Việt Đức", nguoiKy: "Nguyễn Như Trung", noiNhan: "", hasFile: false },
-    { soDi: 0, soKH: "", ngayBH: "25/08/2026", trichYeu: "Phúc cv 6193/BKHCN báo cáo tổng kết việc thi hành Thông tư số 11/2015...", canBoSoanThao: "", nguoiKy: "Lê Anh Tuấn", noiNhan: "", hasFile: true },
-    { soDi: 1568, soKH: "1568/CYTT-HT", ngayBH: "24/08/2026", trichYeu: "Phúc CV 297 TGDV Xin ý kiến dự thảo tờ trình của BTGDV", canBoSoanThao: "Đỗ Văn Điển", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Cơ quan Đảng Ủy Bộ", hasFile: true },
-    { soDi: 1567, soKH: "1567/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", canBoSoanThao: "Đỗ Văn Điển", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1563, soKH: "1563/CYTT-TC", ngayBH: "24/08/2026", trichYeu: "Xin cấp HCNG", canBoSoanThao: "Lưu Anh Tuấn", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Lãnh sự", hasFile: true },
-    { soDi: 1565, soKH: "1565/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "Phúc CV 3661 LPQT Góp ý TKCT của BCKTKT dự án LPQT 2026", canBoSoanThao: "Lê Mai Phượng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1566, soKH: "1566/CYTT-", ngayBH: "24/08/2026", trichYeu: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", canBoSoanThao: "Đậu Việt Đức", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ, Cơ quan Đảng Ủy Bộ, Xem thêm", hasFile: true },
-    { soDi: 1564, soKH: "1564/PG-CYTT-KT", ngayBH: "24/08/2026", trichYeu: "Xyk TTr LĐB vv ký ban hành QĐ cử CB đi công tác nước ngoài (M)", canBoSoanThao: "", nguoiKy: "Nguyễn Như Trung", noiNhan: "", hasFile: true },
-    { soDi: 1560, soKH: "1560/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Về cung cấp thông tin phục vụ CV số 4431/TGV ngày 21/8/2026 của Tổ Giúp việc", canBoSoanThao: "Kiều Việt Hùng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Ngoại giao kinh tế", hasFile: true },
-    { soDi: 1561, soKH: "1561/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Công văn gửi Cục NVVH đ/n cho ý kiến đối với Báo cáo đề xuất chủ trương đầu tư...", canBoSoanThao: "Phạm Trung Dũng", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Ngoại vụ và Ngoại giao văn hóa", hasFile: true }
-  ];
-
-  let filteredData = dummyData;
+  let filteredData = apiData;
 
   if (searchKeyword) {
     const kw = removeAccents(searchKeyword);
@@ -164,10 +187,19 @@ export default function ToanBoVanBanDi() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={9} className="py-8 text-center bg-gray-50/50 border border-gray-200">
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                    <span>Đang tải dữ liệu...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors text-gray-900">
-                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.soDi}</td>
+                  <td className="py-2.5 px-3 border border-gray-300 text-center">{row.soDi !== "0" ? row.soDi : ""}</td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center text-[#005fb8] font-medium hover:underline cursor-pointer">{row.soKH}</td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center">{row.ngayBH}</td>
                   <td className="py-2.5 px-3 border border-gray-300">

@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, RefreshCcw, X, ChevronDown, ChevronRight, Plus, UploadCloud, UserPlus, Ban } from "lucide-react";
+import { Search, RefreshCcw, X, ChevronDown, ChevronRight, Plus, UploadCloud, UserPlus, Ban, Loader2 } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { workRecordService } from "@/services/apiService";
 
 const trangThaiList = ["Đang xử lý", "Đã kết thúc"];
 
@@ -28,7 +29,48 @@ interface AssignedUser {
 
 export default function HoSoDangTheoDoi() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await workRecordService.getFollowed(0, 1000);
+        const statusMap: Record<string, string> = {
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Đã kết thúc",
+          "SUSPENDED": "Đã tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            ten: item.name || "Không có tên",
+            ngayGiao: formatDate(item.assignedAt),
+            hanXuLy: formatDate(item.dueAt),
+            nguoiLap: item.creatorName || "Chưa rõ",
+            phuTrach: (item.ownerNames || []).join(", "),
+            phoiHop: (item.collaboratorNames || []).join(", "),
+            theoDoi: (item.followerNames || []).join(", "),
+            trangThai: statusMap[item.status] || item.status || "Chưa xử lý"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState("2026");
@@ -120,13 +162,7 @@ export default function HoSoDangTheoDoi() {
     return createPortal(content, document.body);
   };
 
-  const dummyData: any[] = [
-    { ten: "Hồ sơ dự án chuyển đổi số", ngayGiao: "25/08/2026", hanXuLy: "30/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Nguyễn Văn A", phoiHop: "Trần Thị B", theoDoi: "Lê Văn C", trangThai: "Đang xử lý" },
-    { ten: "Hồ sơ triển khai hệ thống nội bộ", ngayGiao: "24/08/2026", hanXuLy: "28/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Lê Văn C", phoiHop: "Nguyễn Văn A", theoDoi: "Trần Thị B", trangThai: "Đã kết thúc" },
-    { ten: "Hồ sơ mua sắm thiết bị", ngayGiao: "23/08/2026", hanXuLy: "25/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Trần Thị B", phoiHop: "", theoDoi: "Nguyễn Văn A", trangThai: "Đang xử lý" }
-  ];
-
-  let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
+  let filteredData = apiData.filter(row => selectedStatuses.includes(row.trangThai));
 
     const removeAccents = (str: string | undefined | null) => {
     if (!str) return "";
@@ -239,7 +275,16 @@ export default function HoSoDangTheoDoi() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={8} className="py-8 text-center bg-gray-50/50 border border-gray-200">
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                    <span>Đang tải dữ liệu...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((row, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors text-gray-900">
                   <td className="py-2.5 px-3 border border-gray-300">

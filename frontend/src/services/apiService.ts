@@ -72,6 +72,8 @@ export const submissionService = {
 // ---------------------------
 export const workRecordService = {
   getCreatedByMe: (page = 0, size = 20) => fetchWithAuth(`/work-records/created-by-me?page=${page}&size=${size}`),
+  getParticipated: (page = 0, size = 20) => fetchWithAuth(`/work-records/participated?page=${page}&size=${size}`),
+  getFollowed: (page = 0, size = 20) => fetchWithAuth(`/work-records/followed?page=${page}&size=${size}`),
 };
 
 // ---------------------------
@@ -79,4 +81,14 @@ export const workRecordService = {
 // ---------------------------
 export const frequentGroupService = {
   getAll: (page = 0, size = 20) => fetchWithAuth(`/frequent-groups?page=${page}&size=${size}`),
+};
+
+// ---------------------------
+// 7. Văn bản đi (Outgoing)
+// ---------------------------
+export const outgoingService = {
+  getAll: (page = 0, size = 20) => fetchWithAuth(`/outgoing-documents?page=${page}&size=${size}`),
+  getPublished: (page = 0, size = 20) => fetchWithAuth(`/outgoing-documents/published?page=${page}&size=${size}`),
+  getMyPublished: (page = 0, size = 20) => fetchWithAuth(`/outgoing-documents/published/my?page=${page}&size=${size}`),
+  getDetail: (id: number) => fetchWithAuth(`/outgoing-documents/${id}`),
 };
