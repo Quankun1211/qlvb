@@ -271,7 +271,6 @@ export default function HoSoDangTheoDoi() {
         {filteredData.length > 0 && (
           <Pagination 
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredData.length / pageSize)}
             totalItems={filteredData.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}

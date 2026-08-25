@@ -31,12 +31,30 @@ public class WorkService {
     }
 
     private WorkResponse toResponse(Work work) {
+        String incomingNumber = null;
+        String documentNumber = null;
+        if (work.getIncomingDocument() != null) {
+            incomingNumber = work.getIncomingDocument().getIncomingNumber();
+            if (work.getIncomingDocument().getDocument() != null) {
+                documentNumber = work.getIncomingDocument().getDocument().getReferenceNumber();
+            }
+        }
+
+        // Just returning empty lists for now, logic to fetch assignees can be added later
+        // if WorkAssignee doesn't store role
+        java.util.List<String> assignees = new java.util.ArrayList<>();
+        java.util.List<String> collaborators = new java.util.ArrayList<>();
+
         return WorkResponse.builder()
                 .id(work.getId())
                 .name(work.getName())
+                .incomingNumber(incomingNumber)
+                .documentNumber(documentNumber)
                 .dueAt(work.getDueAt())
                 .assignedAt(work.getAssignedAt())
                 .assignerName(work.getAssignedBy() != null ? work.getAssignedBy().getFullName() : null)
+                .assigneeNames(assignees)
+                .collaboratorNames(collaborators)
                 .status(work.getStatus())
                 .description(work.getDescription())
                 .build();

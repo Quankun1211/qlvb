@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, X, Paperclip, FileDown, Search as SearchIcon, ArrowDownToLine, FileText, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import { AttachmentModal, PDFDetailModal, WordDetailModal } from "@/app/van-ban-den/[slug]/SharedModals";
+import { submissionService } from "@/services/apiService";
 
 const mockDonVi = ["Đơn vị đôn đốc", "Văn phòng Bộ", "Cục Cơ yếu-Công nghệ thông tin"];
 const mockNguoiSoan = ["Đậu Việt Đức", "Đỗ Văn Điển", "Lưu Anh Tuấn", "Lê Mai Phượng", "Kiều Việt Hùng"];
@@ -43,20 +44,44 @@ export default function VanBanDaPhatHanhCaNhan() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const dummyData: any[] = [
-    { soDi: 1569, soKH: "1569/CYTT-TC", ngayBH: "25/08/2026", trichYeu: "(GẤP) Xin ý kiến hồ sơ duyệt danh sách hưởng tiền CĐS", nguoiKy: "Hồ Sỹ An", noiNhan: "Vụ Tổ chức Cán bộ", hasFile: true },
-    { soDi: 1570, soKH: "1570/CYTT-NC", ngayBH: "25/08/2026", trichYeu: "Phúc 3704/LPQT về cung cấp thông tin dự án Luật Định danh và xác thực điện tử", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1568, soKH: "1568/CYTT-HT", ngayBH: "24/08/2026", trichYeu: "Phúc CV 297 TGDV Xin ý kiến dự thảo tờ trình của BTGDV", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Cơ quan Đảng Ủy Bộ", hasFile: true },
-    { soDi: 1567, soKH: "1567/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", nguoiKy: "Nguyễn Đăng Lâm", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1563, soKH: "1563/CYTT-TC", ngayBH: "24/08/2026", trichYeu: "Xin cấp HCNG", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Lãnh sự", hasFile: true },
-    { soDi: 1565, soKH: "1565/CYTT-NC", ngayBH: "24/08/2026", trichYeu: "Phúc CV 3661 LPQT Góp ý TKCT của BCKTKT dự án LPQT 2026", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Luật pháp và Điều ước quốc tế", hasFile: true },
-    { soDi: 1566, soKH: "1566/CYTT-", ngayBH: "24/08/2026", trichYeu: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ, Cơ quan Đảng Ủy Bộ, Xem thêm", hasFile: true },
-    { soDi: 1560, soKH: "1560/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Về cung cấp thông tin phục vụ CV số 4431/TGV ngày 21/8/2026 của Tổ Giúp việc", nguoiKy: "Nguyễn Như Trung", noiNhan: "Vụ Ngoại giao kinh tế", hasFile: true },
-    { soDi: 1561, soKH: "1561/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Công văn gửi Cục NVVH đ/n cho ý kiến đối với Báo cáo đề xuất chủ trương đầu tư Dự án \"Nâng cấp phần mềm Cơ sở dữ liệu chuyên ngành Ngoại vụ phục vụ công tác chỉ đạo, điều hành đơn vị\" của SNV thành phố Đà Nẵng.", nguoiKy: "Nguyễn Như Trung", noiNhan: "Cục Ngoại vụ và Ngoại giao văn hóa", hasFile: true },
-    { soDi: 1562, soKH: "1562/CYTT-NC", ngayBH: "22/08/2026", trichYeu: "Phúc 2871/VP-THBC về việc xin ý kiến dự thảo Quy chế sử dụng AI trong BNG", nguoiKy: "Nguyễn Như Trung", noiNhan: "Văn phòng Bộ", hasFile: true }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  let filteredData = dummyData;
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await submissionService.getPublished(0, 1000);
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            soDi: item.documentNumber ? parseInt(item.documentNumber.split('/')[0]) || 0 : 0,
+            soKH: item.documentNumber || "Số KH",
+            ngayBH: formatDate(item.updatedAt || item.createdAt),
+            trichYeu: item.summary || "Không có trích yếu",
+            nguoiKy: item.approvedByName || "Lãnh đạo",
+            noiNhan: item.departmentName || "Chưa rõ",
+            hasFile: true,
+            canBoSoanThao: item.draftedByName
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  let filteredData = apiData;
 
     const removeAccents = (str: string | undefined | null) => {
     if (!str) return "";
@@ -182,7 +207,12 @@ export default function VanBanDaPhatHanhCaNhan() {
             ) : (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-gray-800 bg-gray-50/50 border border-gray-200 font-medium">
-                  Không có dữ liệu
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-[#005fb8] border-t-transparent rounded-full animate-spin mb-2"></div>
+                      <span className="text-gray-500 text-[13px]">Đang tải dữ liệu...</span>
+                    </div>
+                  ) : "Không có dữ liệu"}
                 </td>
               </tr>
             )}
@@ -192,7 +222,6 @@ export default function VanBanDaPhatHanhCaNhan() {
         {filteredData.length > 0 && (
           <Pagination 
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredData.length / pageSize)}
             totalItems={filteredData.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}

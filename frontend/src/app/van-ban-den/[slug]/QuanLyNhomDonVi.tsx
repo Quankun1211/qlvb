@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Folder, ChevronRight, ChevronDown, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight as RightIcon, ChevronsRight } from "lucide-react";
 import Pagination from "./Pagination";
+import { frequentGroupService } from "@/services/apiService";
 
 export default function QuanLyNhomDonVi() {
   const [mounted, setMounted] = useState(false);
@@ -264,13 +265,36 @@ export default function QuanLyNhomDonVi() {
     return createPortal(content, document.body);
   };
 
-  const mockData = [
-    { id: 1, stt: 1, tenNhom: "Nhóm kỹ thuật", tenVietTat: "KT", phanLoai: "Nội bộ", loaiNhom: "Phòng ban", moTa: "Nhóm phụ trách các vấn đề kỹ thuật", trangThai: "Hoạt động" },
-    { id: 2, stt: 2, tenNhom: "Nhóm liên ngành", tenVietTat: "LN", phanLoai: "Liên thông", loaiNhom: "Đơn vị", moTa: "Nhóm xử lý văn bản liên ngành", trangThai: "Hoạt động" },
-    { id: 3, stt: 3, tenNhom: "Ban giám đốc", tenVietTat: "BGD", phanLoai: "Nội bộ", loaiNhom: "Người dùng", moTa: "Ban giám đốc điều hành", trangThai: "Ngừng hoạt động" },
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const filteredData = mockData.filter(item => {
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await frequentGroupService.getAll(0, 1000);
+        
+        const mapped = (res.content || []).map((item: any, index: number) => ({
+          id: item.id,
+          stt: index + 1,
+          tenNhom: item.name || "Không có tên",
+          tenVietTat: item.shortName || "",
+          phanLoai: item.documentClassification === "INTERNAL" ? "Nội bộ" : "Liên thông",
+          loaiNhom: item.groupType === "DEPARTMENT" ? "Phòng ban" : item.groupType === "USER" ? "Người dùng" : "Đơn vị",
+          moTa: item.description || "",
+          trangThai: item.status === 1 ? "Hoạt động" : "Ngừng hoạt động"
+        }));
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredData = apiData.filter(item => {
     if (phanLoai && item.phanLoai !== phanLoai) return false;
     if (loaiNhom && item.loaiNhom !== loaiNhom) return false;
     if (searchKeyword && !item.tenNhom.toLowerCase().includes(searchKeyword.toLowerCase()) && !item.tenVietTat.toLowerCase().includes(searchKeyword.toLowerCase())) {
@@ -363,8 +387,13 @@ export default function QuanLyNhomDonVi() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-3 text-center text-gray-900 bg-gray-50">
-                    Không có dữ liệu
+                  <td colSpan={7} className="p-8 text-center text-gray-900 bg-gray-50/50">
+                    {isLoading ? (
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-[#005fb8] border-t-transparent rounded-full animate-spin mb-2"></div>
+                        <span className="text-gray-500 text-[13px]">Đang tải dữ liệu...</span>
+                      </div>
+                    ) : "Không có dữ liệu"}
                   </td>
                 </tr>
               )}
@@ -532,7 +561,7 @@ export default function QuanLyNhomDonVi() {
                                 return (
                                   <tr key={child.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors">
                                     <td className="p-2.5 border-r border-gray-200">{child.name}</td>
-                                    <td className="p-2.5 border-r border-gray-200">{child.account}</td>
+                                    <td className="p-2.5 border-r border-gray-200">{(child as any).account}</td>
                                     <td className="p-2.5 text-center">
                                       {isSelected ? (
                                         <Check className="w-5 h-5 text-green-600 font-bold mx-auto" />

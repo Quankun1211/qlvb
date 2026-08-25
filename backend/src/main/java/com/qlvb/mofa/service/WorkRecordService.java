@@ -32,6 +32,10 @@ public class WorkRecordService {
     }
 
     private WorkRecordResponse toResponse(WorkRecord record) {
+        java.util.List<String> owners = new java.util.ArrayList<>();
+        java.util.List<String> collaborators = new java.util.ArrayList<>();
+        java.util.List<String> followers = new java.util.ArrayList<>();
+
         return WorkRecordResponse.builder()
                 .id(record.getId())
                 .name(record.getName())
@@ -39,6 +43,9 @@ public class WorkRecordService {
                 .dueAt(record.getDueAt())
                 .creatorId(record.getCreatedBy() != null ? record.getCreatedBy().getId() : null)
                 .creatorName(record.getCreatedBy() != null ? record.getCreatedBy().getFullName() : null)
+                .ownerNames(owners)
+                .collaboratorNames(collaborators)
+                .followerNames(followers)
                 .status(record.getStatus())
                 .description(record.getDescription())
                 .build();

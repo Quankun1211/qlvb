@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, ChevronDown, CheckCircle, XCircle, X } from "lucide-react";
-import CongViecDetailModal from "@/components/shared/CongViecDetailModal";
 import { workService } from "@/services/apiService";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
@@ -309,7 +308,6 @@ export default function CongViecDuocGiao() {
         {filteredData.length > 0 && (
           <Pagination 
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredData.length / pageSize)}
             totalItems={filteredData.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}

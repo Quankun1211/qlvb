@@ -63,4 +63,20 @@ export const submissionService = {
   getDrafting: (page = 0, size = 20) => fetchWithAuth(`/submissions/drafting?page=${page}&size=${size}`),
   getRequestingOpinion: (page = 0, size = 20) => fetchWithAuth(`/submissions/requesting-opinion?page=${page}&size=${size}`),
   getPublished: (page = 0, size = 20) => fetchWithAuth(`/submissions/published?page=${page}&size=${size}`),
+  getSuspended: (page = 0, size = 20) => fetchWithAuth(`/submissions/suspended?page=${page}&size=${size}`),
+  getReturned: (page = 0, size = 20) => fetchWithAuth(`/submissions/returned?page=${page}&size=${size}`),
+};
+
+// ---------------------------
+// 5. Hồ sơ công việc (Work Records)
+// ---------------------------
+export const workRecordService = {
+  getCreatedByMe: (page = 0, size = 20) => fetchWithAuth(`/work-records/created-by-me?page=${page}&size=${size}`),
+};
+
+// ---------------------------
+// 6. Nhóm đơn vị (Frequent Groups)
+// ---------------------------
+export const frequentGroupService = {
+  getAll: (page = 0, size = 20) => fetchWithAuth(`/frequent-groups?page=${page}&size=${size}`),
 };

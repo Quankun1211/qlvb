@@ -161,7 +161,9 @@ export default function VanBanTrinhDetailModal({ isOpen, onClose }: VanBanTrinhD
                         <td className="py-3 px-4 font-bold text-gray-800 border-r border-gray-200 align-top">
                           <div className="flex items-center gap-2">
                             Văn bản kèm theo
-                            <Download className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8]" onClick={() => alert('Đang tải toàn bộ văn bản kèm theo...')} title="Tải tất cả" />
+                            <span title="Tải tất cả">
+                              <Download className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8]" onClick={() => alert('Đang tải toàn bộ văn bản kèm theo...')} />
+                            </span>
                           </div>
                         </td>
                         <td className="py-3 px-4">

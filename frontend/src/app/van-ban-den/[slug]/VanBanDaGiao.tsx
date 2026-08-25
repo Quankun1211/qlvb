@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import Pagination from "./Pagination";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import { workService } from "@/services/apiService";
 
 export default function VanBanDaGiao() {
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
@@ -26,11 +27,52 @@ export default function VanBanDaGiao() {
     return createPortal(content, document.body);
   };
 
-  const dummyData = [
-    // Empty data for now as per "Không có dữ liệu" screenshot, but I'll add one mock to test layout
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  let filteredData = dummyData.filter(row => trangThai.includes(row.trangThai));
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await workService.getAssignedByMe(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Đã kết thúc",
+          "OVERDUE": "Quá hạn",
+          "SUSPENDED": "Tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            soDen: item.incomingNumber || "Số đến",
+            soKyHieu: item.documentNumber || "",
+            tenCongViec: item.workName || "Không có tên công việc",
+            hanXL: formatDate(item.deadline) || "Chưa cập nhật",
+            ngayGiao: formatDate(item.assignedAt),
+            nguoiGiao: item.assignedByName || "Chưa rõ",
+            cbdvCT: (item.assigneeNames || []).join(", ") || "Chưa rõ",
+            cbdvPH: item.collaboratorNames || [],
+            trangThai: statusMap[item.status] || item.status || "Chưa xử lý"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  let filteredData = apiData.filter(row => trangThai.includes(row.trangThai));
 
   const toggleTrangThai = (val: string) => {
     setTrangThai(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val]);
@@ -160,8 +202,13 @@ export default function VanBanDaGiao() {
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="p-4 text-center text-gray-900 bg-gray-50">
-                  Không có dữ liệu
+                <td colSpan={9} className="p-8 text-center text-gray-900 bg-gray-50/50">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-[#005fb8] border-t-transparent rounded-full animate-spin mb-2"></div>
+                      <span className="text-gray-500 text-[13px]">Đang tải dữ liệu...</span>
+                    </div>
+                  ) : "Không có dữ liệu"}
                 </td>
               </tr>
             )}

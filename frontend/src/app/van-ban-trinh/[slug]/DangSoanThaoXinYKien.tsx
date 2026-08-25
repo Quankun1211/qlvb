@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, Paperclip } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import VanBanTrinhDetailModal from "@/components/shared/VanBanTrinhDetailModal";
+import { submissionService } from "@/services/apiService";
 
 const allStatuses = [
   "Đang soạn thảo", "Đang xin ý kiến"
@@ -83,11 +84,48 @@ export default function DangSoanThaoXinYKien() {
     return createPortal(content, document.body);
   };
 
-  const dummyData: any[] = [
-    { stt: 1, so: "423/TTr-CYTT", title: "Tờ trình xin tổ chức hội thảo an toàn thông tin 2026", nguoi: "Nguyễn Văn A", ngay: "25/08/2026", phong: "Phòng An Toàn Thông Tin", doiTuong: "Cục phó", trangThai: "Đang soạn thảo" },
-    { stt: 2, so: "424/TTr-CYTT", title: "Xin ý kiến về việc sửa đổi quy chế văn thư", nguoi: "Trần Thị B", ngay: "25/08/2026", phong: "Phòng Hành chính", doiTuong: "Cục trưởng", trangThai: "Đang xin ý kiến" }
-  ];
-  const filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [resDraft, resOpinion] = await Promise.all([
+          submissionService.getDrafting(0, 500),
+          submissionService.getRequestingOpinion(0, 500)
+        ]);
+        
+        const combined = [...(resDraft.content || []), ...(resOpinion.content || [])];
+        
+        const mapped = combined.map((item: any, index: number) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            stt: index + 1,
+            so: item.submissionNumber || "Chưa có số",
+            title: item.subject || "Không có tiêu đề",
+            nguoi: item.draftedByName || "Chưa rõ",
+            ngay: formatDate(item.submittedAt),
+            phong: item.departmentName || "Phòng Hành chính",
+            doiTuong: item.target || "",
+            trangThai: item.status === "DRAFTING" ? "Đang soạn thảo" : "Đang xin ý kiến"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredData = apiData.filter(row => selectedStatuses.includes(row.trangThai));
   const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
@@ -215,8 +253,13 @@ export default function DangSoanThaoXinYKien() {
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-gray-800 bg-gray-50/50 font-medium">
-                  Không có dữ liệu
+                <td colSpan={9} className="p-8 text-center text-gray-800 bg-gray-50/50 font-medium">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-[#005fb8] border-t-transparent rounded-full animate-spin mb-2"></div>
+                      <span className="text-gray-500 text-[13px]">Đang tải dữ liệu...</span>
+                    </div>
+                  ) : "Không có dữ liệu"}
                 </td>
               </tr>
             )}

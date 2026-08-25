@@ -305,6 +305,7 @@ export default function ToanBoVanBanTrinh() {
           onPageChange={setCurrentPage} 
           onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }} 
         />
+        )}
       </div>
 
       {/* --- ADVANCED SEARCH MODAL --- */}

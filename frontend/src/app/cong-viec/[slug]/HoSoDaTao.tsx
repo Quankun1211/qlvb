@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, X, ChevronDown, ChevronRight, Plus, UploadCloud, UserPlus, Ban } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { workRecordService } from "@/services/apiService";
 
-const trangThaiList = ["Đang xử lý", "Đã kết thúc"];
+const trangThaiList = ["Đang xử lý", "Đã kết thúc", "Quá hạn", "Tạm dừng"];
 
 const mockDepartments = [
   { id: '1', name: 'Phòng Quản lý hệ thống', users: ['Phan Văn Nhân', 'Nguyễn Thị Thu Hằng', 'Bùi Hữu Việt', 'Nguyễn Vũ Tuyên', 'Chu Phúc Hà'] },
@@ -120,13 +121,51 @@ export default function HoSoDaTao() {
     return createPortal(content, document.body);
   };
 
-  const dummyData: any[] = [
-    { ten: "Hồ sơ dự án chuyển đổi số", ngayGiao: "25/08/2026", hanXuLy: "30/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Nguyễn Văn A", phoiHop: "Trần Thị B", theoDoi: "Lê Văn C", trangThai: "Đang xử lý" },
-    { ten: "Hồ sơ triển khai hệ thống nội bộ", ngayGiao: "24/08/2026", hanXuLy: "28/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Lê Văn C", phoiHop: "Nguyễn Văn A", theoDoi: "Trần Thị B", trangThai: "Đã kết thúc" },
-    { ten: "Hồ sơ mua sắm thiết bị", ngayGiao: "23/08/2026", hanXuLy: "25/08/2026", nguoiLap: "Lê Nhật Minh", phuTrach: "Trần Thị B", phoiHop: "", theoDoi: "Nguyễn Văn A", trangThai: "Đang xử lý" }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await workRecordService.getCreatedByMe(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Đã kết thúc",
+          "OVERDUE": "Quá hạn",
+          "SUSPENDED": "Tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            ten: item.name || "Không có tên",
+            ngayGiao: formatDate(item.assignedAt),
+            hanXuLy: formatDate(item.dueAt) || "Chưa cập nhật",
+            nguoiLap: item.creatorName || "Chưa rõ",
+            phuTrach: (item.ownerNames || []).join(", "),
+            phoiHop: (item.collaboratorNames || []).join(", "),
+            theoDoi: (item.followerNames || []).join(", "),
+            trangThai: statusMap[item.status] || item.status || "Chưa xử lý"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  let filteredData = apiData.filter(row => selectedStatuses.includes(row.trangThai));
 
     const removeAccents = (str: string | undefined | null) => {
     if (!str) return "";
@@ -261,7 +300,12 @@ export default function HoSoDaTao() {
             ) : (
               <tr>
                 <td colSpan={8} className="py-8 text-center text-gray-800 bg-gray-50/50 border border-gray-200 font-medium">
-                  Không có dữ liệu
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-[#005fb8] border-t-transparent rounded-full animate-spin mb-2"></div>
+                      <span className="text-gray-500 text-[13px]">Đang tải dữ liệu...</span>
+                    </div>
+                  ) : "Không có dữ liệu"}
                 </td>
               </tr>
             )}
@@ -271,7 +315,6 @@ export default function HoSoDaTao() {
         {filteredData.length > 0 && (
           <Pagination 
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredData.length / pageSize)}
             totalItems={filteredData.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}

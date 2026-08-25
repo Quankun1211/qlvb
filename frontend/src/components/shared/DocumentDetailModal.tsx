@@ -176,16 +176,18 @@ export default function DocumentDetailModal({ isOpen, onClose, title, data = def
                           {data.thongTinVanBan.files.map((file: string, idx: number) => (
                             <div key={idx} className="flex items-center gap-2 group">
                               <a href="#" className="text-[#005fb8] hover:underline hover:text-blue-800 text-[13px] break-all">{file}</a>
-                              <Search 
-                                className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8] shrink-0" 
-                                onClick={() => setPreviewFile(file)}
-                                title="Xem trước file"
-                              />
-                              <FileDown 
-                                className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8] shrink-0" 
-                                onClick={() => alert(`Đang tải file: ${file}`)}
-                                title="Tải xuống"
-                              />
+                              <span title="Xem trước file">
+                                <Search 
+                                  className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8] shrink-0" 
+                                  onClick={() => setPreviewFile(file)}
+                                />
+                              </span>
+                              <span title="Tải xuống">
+                                <FileDown 
+                                  className="w-4 h-4 text-gray-500 cursor-pointer hover:text-[#005fb8] shrink-0" 
+                                  onClick={() => alert(`Đang tải file: ${file}`)}
+                                />
+                              </span>
                             </div>
                           ))}
                         </div>

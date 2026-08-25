@@ -240,13 +240,13 @@ export default function VanBanDenCuaToi() {
                   <td className="p-2 border-r border-gray-200 align-top pt-3 text-gray-900">{row.cbdvCT}</td>
                   <td className="p-2 border-r border-gray-200 align-top pt-3 text-gray-900">
                     <div className="flex flex-col items-start">
-                      {row.cbdvPH.slice(0, 2).map((p, i) => <span key={i}>{p}</span>)}
+                      {row.cbdvPH.slice(0, 2).map((p: string, i: number) => <span key={i}>{p}</span>)}
                       {row.cbdvPH.length > 2 && (
                         <div className="relative group mt-1">
                           <span className="text-[#005fb8] cursor-pointer group-hover:underline">Xem thêm</span>
                           <div className="hidden group-hover:flex absolute left-0 top-full pt-1 z-50 w-0">
                             <div className="bg-white border border-gray-300 shadow-xl p-2.5 rounded flex flex-col gap-1 text-[13px] text-gray-800 min-w-max">
-                              {row.cbdvPH.map((p, i) => (
+                              {row.cbdvPH.map((p: string, i: number) => (
                                 <span key={i} className="whitespace-nowrap">{p}</span>
                               ))}
                             </div>

@@ -12,7 +12,9 @@ import java.util.List;
 @Builder
 public class WorkResponse {
     private Long id;
-    private String name; 
+    private String name;
+    private String incomingNumber; // Số đến của văn bản đến
+    private String documentNumber; // Số ký hiệu của văn bản đến
     private LocalDateTime dueAt; 
     private LocalDateTime assignedAt; 
     private String assignerName; 

@@ -209,7 +209,6 @@ export default function ToanBoVanBanDi() {
         {filteredData.length > 0 && (
           <Pagination 
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredData.length / pageSize)}
             totalItems={filteredData.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
