@@ -43,13 +43,6 @@ public class FileEntity {
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
 
-    /**
-     * Ví dụ:
-     * HELP_DOCUMENT
-     * OUTGOING_DOCUMENT
-     * INCOMING_DOCUMENT
-     * DRAFT_DOCUMENT
-     */
     @Column(name = "entity_type", length = 50)
     private String entityType;
 

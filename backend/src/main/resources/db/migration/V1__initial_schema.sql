@@ -1,9 +1,7 @@
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-
-
+DROP TABLE IF EXISTS incoming_attachments;
 DROP TABLE IF EXISTS work_record_items;
 DROP TABLE IF EXISTS work_record_members;
 DROP TABLE IF EXISTS work_history;
@@ -39,8 +37,6 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS departments;
 DROP TABLE IF EXISTS units;
 
-
-
 CREATE TABLE units (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code                VARCHAR(50) NOT NULL,
@@ -49,22 +45,12 @@ CREATE TABLE units (
     parent_id           BIGINT UNSIGNED NULL,
     unit_type           VARCHAR(50),
     status              TINYINT NOT NULL DEFAULT 1,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_units_code (code),
     KEY idx_units_parent (parent_id),
-
-    CONSTRAINT fk_units_parent
-        FOREIGN KEY (parent_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    CONSTRAINT fk_units_parent FOREIGN KEY (parent_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE departments (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -73,1147 +59,458 @@ CREATE TABLE departments (
     unit_id             BIGINT UNSIGNED NOT NULL,
     parent_id           BIGINT UNSIGNED NULL,
     status              TINYINT NOT NULL DEFAULT 1,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_departments_code (code),
     KEY idx_departments_unit (unit_id),
     KEY idx_departments_parent (parent_id),
-
-    CONSTRAINT fk_departments_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_departments_parent
-        FOREIGN KEY (parent_id)
-        REFERENCES departments(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    CONSTRAINT fk_departments_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_departments_parent FOREIGN KEY (parent_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE users (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     username            VARCHAR(100) NOT NULL,
     password_hash       VARCHAR(255) NOT NULL,
-
-    role                ENUM('USER', 'ADMIN')
-                        NOT NULL DEFAULT 'USER',
-
+    role                ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
     full_name           VARCHAR(255) NOT NULL,
     email               VARCHAR(255),
-
     department_id       BIGINT UNSIGNED NULL,
     unit_id             BIGINT UNSIGNED NULL,
-
     status              TINYINT NOT NULL DEFAULT 1,
-
     last_login_at       DATETIME NULL,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_users_username (username),
     UNIQUE KEY uk_users_email (email),
-
     KEY idx_users_role (role),
     KEY idx_users_department (department_id),
     KEY idx_users_unit (unit_id),
-
-    CONSTRAINT fk_users_department
-        FOREIGN KEY (department_id)
-        REFERENCES departments(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_users_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    CONSTRAINT fk_users_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_users_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE documents (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     document_type       VARCHAR(30) NOT NULL,
-
     incoming_number     VARCHAR(50),
     outgoing_number     VARCHAR(50),
     reference_number    VARCHAR(100),
-
     subject             TEXT NOT NULL,
-
     issue_date          DATE NULL,
     received_date       DATE NULL,
-
     issuing_unit_id     BIGINT UNSIGNED NULL,
     receiving_unit_id   BIGINT UNSIGNED NULL,
-
     created_by          BIGINT UNSIGNED NULL,
-
     status              VARCHAR(100) NOT NULL,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_documents_type_status
-        (document_type, status),
-
-    KEY idx_documents_received_date
-        (received_date),
-
-    KEY idx_documents_issue_date
-        (issue_date),
-
-    KEY idx_documents_reference_number
-        (reference_number),
-
-    CONSTRAINT fk_documents_issuing_unit
-        FOREIGN KEY (issuing_unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_documents_receiving_unit
-        FOREIGN KEY (receiving_unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_documents_created_by
-        FOREIGN KEY (created_by)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_documents_type_status (document_type, status),
+    KEY idx_documents_received_date (received_date),
+    KEY idx_documents_issue_date (issue_date),
+    KEY idx_documents_reference_number (reference_number),
+    CONSTRAINT fk_documents_issuing_unit FOREIGN KEY (issuing_unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_documents_receiving_unit FOREIGN KEY (receiving_unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_documents_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE incoming_documents (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     document_id         BIGINT UNSIGNED NOT NULL,
-
     incoming_number     VARCHAR(50) NOT NULL,
     received_date       DATE NOT NULL,
-
     receipt_type        VARCHAR(50),
-
     response_required   TINYINT NOT NULL DEFAULT 0,
-
-    status              ENUM(
-                            'UNPROCESSED',
-                            'PROCESSING',
-                            'COMPLETED',
-                            'SUSPENDED'
-                        ) NOT NULL DEFAULT 'UNPROCESSED',
-
+    status              ENUM('UNPROCESSED', 'PROCESSING', 'COMPLETED', 'SUSPENDED') NOT NULL DEFAULT 'UNPROCESSED',
     receiving_unit_id   BIGINT UNSIGNED NOT NULL,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_incoming_document (document_id),
-
     KEY idx_incoming_number (incoming_number),
     KEY idx_incoming_status (status),
     KEY idx_incoming_received_date (received_date),
     KEY idx_incoming_unit (receiving_unit_id),
-
-    CONSTRAINT fk_incoming_document
-        FOREIGN KEY (document_id)
-        REFERENCES documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_unit
-        FOREIGN KEY (receiving_unit_id)
-        REFERENCES units(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    CONSTRAINT fk_incoming_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_unit FOREIGN KEY (receiving_unit_id) REFERENCES units(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-
+CREATE TABLE incoming_attachments (
+    id                   BIGINT NOT NULL AUTO_INCREMENT,
+    incoming_document_id BIGINT UNSIGNED NOT NULL,
+    file_name            VARCHAR(255) NOT NULL,
+    object_name          VARCHAR(500) NOT NULL,
+    content_type         VARCHAR(100),
+    file_size            BIGINT,
+    created_at           DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_incoming_attachment_document (incoming_document_id),
+    CONSTRAINT fk_incoming_attachment_document FOREIGN KEY (incoming_document_id) REFERENCES incoming_documents(id)
+);
 
 CREATE TABLE incoming_assignments (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     incoming_document_id    BIGINT UNSIGNED NOT NULL,
-
     assigned_by             BIGINT UNSIGNED NOT NULL,
-
     lead_user_id            BIGINT UNSIGNED NULL,
     lead_unit_id            BIGINT UNSIGNED NULL,
-
     assigned_at             DATETIME NOT NULL,
     due_at                  DATETIME NULL,
-
-    work_type               ENUM(
-                                'RESPONSE_REQUIRED',
-                                'NO_RESPONSE_REQUIRED'
-                            ) NULL,
-
-    notification_type       ENUM(
-                                'OVERDUE',
-                                'NEAR_DEADLINE'
-                            ) NULL,
-
-    status                  ENUM(
-                                'UNPROCESSED',
-                                'PROCESSING',
-                                'COMPLETED',
-                                'SUSPENDED',
-                                'CANCELLED',
-                                'REJECTED'
-                            ) NOT NULL DEFAULT 'UNPROCESSED',
-
+    work_type               ENUM('RESPONSE_REQUIRED', 'NO_RESPONSE_REQUIRED') NULL,
+    notification_type       ENUM('OVERDUE', 'NEAR_DEADLINE') NULL,
+    status                  ENUM('UNPROCESSED', 'PROCESSING', 'COMPLETED', 'SUSPENDED', 'CANCELLED', 'REJECTED') NOT NULL DEFAULT 'UNPROCESSED',
     return_reason           TEXT NULL,
-
     created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                            ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_incoming_assignments_document
-        (incoming_document_id),
-
-    KEY idx_incoming_assignments_status
-        (status),
-
-    KEY idx_incoming_assignments_due_at
-        (due_at),
-
-    KEY idx_incoming_assignments_lead_user
-        (lead_user_id),
-
-    CONSTRAINT fk_incoming_assignments_document
-        FOREIGN KEY (incoming_document_id)
-        REFERENCES incoming_documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_assignments_by
-        FOREIGN KEY (assigned_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_assignments_lead_user
-        FOREIGN KEY (lead_user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_assignments_lead_unit
-        FOREIGN KEY (lead_unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_incoming_assignments_document (incoming_document_id),
+    KEY idx_incoming_assignments_status (status),
+    KEY idx_incoming_assignments_due_at (due_at),
+    KEY idx_incoming_assignments_lead_user (lead_user_id),
+    CONSTRAINT fk_incoming_assignments_document FOREIGN KEY (incoming_document_id) REFERENCES incoming_documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_assignments_by FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_assignments_lead_user FOREIGN KEY (lead_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_assignments_lead_unit FOREIGN KEY (lead_unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE incoming_collaborators (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     assignment_id       BIGINT UNSIGNED NOT NULL,
-
     user_id             BIGINT UNSIGNED NULL,
     unit_id             BIGINT UNSIGNED NULL,
-
     assigned_at         DATETIME NOT NULL,
-
     status              VARCHAR(50),
-
-    KEY idx_incoming_collab_assignment
-        (assignment_id),
-
-    KEY idx_incoming_collab_user
-        (user_id),
-
-    KEY idx_incoming_collab_unit
-        (unit_id),
-
-    CONSTRAINT fk_incoming_collab_assignment
-        FOREIGN KEY (assignment_id)
-        REFERENCES incoming_assignments(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_collab_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_collab_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_incoming_collab_assignment (assignment_id),
+    KEY idx_incoming_collab_user (user_id),
+    KEY idx_incoming_collab_unit (unit_id),
+    CONSTRAINT fk_incoming_collab_assignment FOREIGN KEY (assignment_id) REFERENCES incoming_assignments(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_collab_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_collab_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE incoming_processing_history (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     incoming_document_id    BIGINT UNSIGNED NOT NULL,
-
     processed_by            BIGINT UNSIGNED NOT NULL,
-
     action                  VARCHAR(100) NOT NULL,
-
     old_status              VARCHAR(50),
     new_status              VARCHAR(50),
-
     content                 TEXT,
-
     created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_incoming_history_document
-        (incoming_document_id),
-
-    KEY idx_incoming_history_user
-        (processed_by),
-
-    CONSTRAINT fk_incoming_history_document
-        FOREIGN KEY (incoming_document_id)
-        REFERENCES incoming_documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_incoming_history_user
-        FOREIGN KEY (processed_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_incoming_history_document (incoming_document_id),
+    KEY idx_incoming_history_user (processed_by),
+    CONSTRAINT fk_incoming_history_document FOREIGN KEY (incoming_document_id) REFERENCES incoming_documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_incoming_history_user FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE frequent_groups (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     name                    VARCHAR(255) NOT NULL,
     short_name              VARCHAR(100),
-
-    document_classification ENUM(
-                                'INTERNAL',
-                                'INTERCONNECTED'
-                            ) NOT NULL,
-
-    group_type              ENUM(
-                                'UNIT',
-                                'DEPARTMENT',
-                                'USER'
-                            ) NOT NULL,
-
+    document_classification ENUM('INTERNAL', 'INTERCONNECTED') NOT NULL,
+    group_type              ENUM('UNIT', 'DEPARTMENT', 'USER') NOT NULL,
     description             TEXT,
-
     status                  TINYINT NOT NULL DEFAULT 1,
-
     created_by              BIGINT UNSIGNED NOT NULL,
-
     created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                            ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_groups_classification
-        (document_classification),
-
-    KEY idx_groups_type
-        (group_type),
-
-    CONSTRAINT fk_groups_created_by
-        FOREIGN KEY (created_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_groups_classification (document_classification),
+    KEY idx_groups_type (group_type),
+    CONSTRAINT fk_groups_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE group_members (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     group_id            BIGINT UNSIGNED NOT NULL,
-
     user_id             BIGINT UNSIGNED NULL,
     department_id       BIGINT UNSIGNED NULL,
     unit_id             BIGINT UNSIGNED NULL,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_group_members_group
-        (group_id),
-
-    KEY idx_group_members_user
-        (user_id),
-
-    KEY idx_group_members_department
-        (department_id),
-
-    KEY idx_group_members_unit
-        (unit_id),
-
-    CONSTRAINT fk_group_members_group
-        FOREIGN KEY (group_id)
-        REFERENCES frequent_groups(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_group_members_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_group_members_department
-        FOREIGN KEY (department_id)
-        REFERENCES departments(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_group_members_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    UNIQUE KEY uk_group_member_unit (group_id, unit_id),
+    UNIQUE KEY uk_group_member_department (group_id, department_id),
+    UNIQUE KEY uk_group_member_user (group_id, user_id),
+    KEY idx_group_members_group (group_id),
+    KEY idx_group_members_user (user_id),
+    KEY idx_group_members_department (department_id),
+    KEY idx_group_members_unit (unit_id),
+    CONSTRAINT fk_group_members_group FOREIGN KEY (group_id) REFERENCES frequent_groups(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_group_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_group_members_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_group_members_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE submissions (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     document_id         BIGINT UNSIGNED NULL,
-
     submission_number   VARCHAR(100) NOT NULL,
-
     subject             TEXT NOT NULL,
-
     drafted_by          BIGINT UNSIGNED NOT NULL,
-
     submitted_at        DATE NOT NULL,
-
     department_id       BIGINT UNSIGNED NOT NULL,
-
     target              VARCHAR(255),
-
     status              ENUM(
-                            'DRAFTING',
-                            'REQUESTING_OPINION',
-                            'SUBMITTING_UNIT_LEADER',
-                            'APPROVED',
-                            'WAITING_MINISTRY_LEADER',
-                            'WAITING_SECRETARY_RECEIPT',
-                            'WAITING_MINISTRY_LEADER_SIGN',
-                            'MINISTRY_LEADER_SIGNED',
-                            'WAITING_MINISTRY_OFFICE',
-                            'PUBLISHED',
-                            'DEPARTMENT_RETURNED',
-                            'UNIT_LEADER_RETURNED',
-                            'UNIT_OFFICE_RETURNED',
-                            'MINISTRY_SECRETARY_RETURNED',
-                            'MINISTRY_LEADER_RETURNED',
-                            'MINISTER_RETURNED',
-                            'MINISTRY_OFFICE_RETURNED',
-                            'TRANSFERRED_TO_ORGANIZATION',
-                            'REQUESTING_MINISTRY_LEADER_OPINION',
-                            'MINISTRY_LEADER_SIGNED_REQUESTING_OPINION',
-                            'SUBMITTING_MINISTRY_LEADER',
-                            'REDONE',
-                            'SUSPENDED'
+                            'DRAFTING', 'REQUESTING_OPINION', 'SUBMITTING_UNIT_LEADER', 'APPROVED',
+                            'WAITING_MINISTRY_LEADER', 'WAITING_SECRETARY_RECEIPT', 'WAITING_MINISTRY_LEADER_SIGN',
+                            'MINISTRY_LEADER_SIGNED', 'WAITING_MINISTRY_OFFICE', 'PUBLISHED', 'DEPARTMENT_RETURNED',
+                            'UNIT_LEADER_RETURNED', 'UNIT_OFFICE_RETURNED', 'MINISTRY_SECRETARY_RETURNED',
+                            'MINISTRY_LEADER_RETURNED', 'MINISTER_RETURNED', 'MINISTRY_OFFICE_RETURNED',
+                            'TRANSFERRED_TO_ORGANIZATION', 'REQUESTING_MINISTRY_LEADER_OPINION',
+                            'MINISTRY_LEADER_SIGNED_REQUESTING_OPINION', 'SUBMITTING_MINISTRY_LEADER', 'REDONE', 'SUSPENDED'
                         ) NOT NULL DEFAULT 'DRAFTING',
-
     published_at        DATETIME NULL,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_submissions_status
-        (status),
-
-    KEY idx_submissions_date
-        (submitted_at),
-
-    KEY idx_submissions_drafted_by
-        (drafted_by),
-
-    CONSTRAINT fk_submissions_document
-        FOREIGN KEY (document_id)
-        REFERENCES documents(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_submissions_drafted_by
-        FOREIGN KEY (drafted_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_submissions_department
-        FOREIGN KEY (department_id)
-        REFERENCES departments(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_submissions_status (status),
+    KEY idx_submissions_date (submitted_at),
+    KEY idx_submissions_drafted_by (drafted_by),
+    CONSTRAINT fk_submissions_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_submissions_drafted_by FOREIGN KEY (drafted_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_submissions_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE submission_comments (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     submission_id           BIGINT UNSIGNED NOT NULL,
-
     requested_from_user_id  BIGINT UNSIGNED NULL,
     requested_from_unit_id  BIGINT UNSIGNED NULL,
-
     content                 TEXT,
-
     sent_at                 DATETIME NOT NULL,
-
     due_at                  DATETIME NULL,
     replied_at              DATETIME NULL,
-
     status                  VARCHAR(50),
-
-    KEY idx_submission_comments_submission
-        (submission_id),
-
-    CONSTRAINT fk_submission_comments_submission
-        FOREIGN KEY (submission_id)
-        REFERENCES submissions(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_submission_comments_user
-        FOREIGN KEY (requested_from_user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_submission_comments_unit
-        FOREIGN KEY (requested_from_unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_submission_comments_submission (submission_id),
+    CONSTRAINT fk_submission_comments_submission FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_submission_comments_user FOREIGN KEY (requested_from_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_submission_comments_unit FOREIGN KEY (requested_from_unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE submission_history (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     submission_id   BIGINT UNSIGNED NOT NULL,
-
     performed_by    BIGINT UNSIGNED NOT NULL,
-
     old_status      VARCHAR(100),
     new_status      VARCHAR(100),
-
     action          VARCHAR(100) NOT NULL,
-
     content         TEXT,
-
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_submission_history_submission
-        (submission_id),
-
-    CONSTRAINT fk_submission_history_submission
-        FOREIGN KEY (submission_id)
-        REFERENCES submissions(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_submission_history_user
-        FOREIGN KEY (performed_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_submission_history_submission (submission_id),
+    CONSTRAINT fk_submission_history_submission FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_submission_history_user FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE draft_documents (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     document_id         BIGINT UNSIGNED NULL,
-
     drafted_by          BIGINT UNSIGNED NOT NULL,
-
     approving_leader_id BIGINT UNSIGNED NULL,
-
     submitted_at        DATE NOT NULL,
-
     subject             TEXT NOT NULL,
-
-    status              ENUM(
-                            'DRAFTING',
-                            'REQUESTING_OPINION',
-                            'SUBMITTING_UNIT_LEADER',
-                            'APPROVED',
-                            'DEPARTMENT_RETURNED',
-                            'UNIT_LEADER_RETURNED',
-                            'PUBLISHED',
-                            'SUSPENDED'
-                        ) NOT NULL DEFAULT 'DRAFTING',
-
+    status              ENUM('DRAFTING', 'REQUESTING_OPINION', 'SUBMITTING_UNIT_LEADER', 'APPROVED', 'DEPARTMENT_RETURNED', 'UNIT_LEADER_RETURNED', 'PUBLISHED', 'SUSPENDED') NOT NULL DEFAULT 'DRAFTING',
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_drafts_status
-        (status),
-
-    KEY idx_drafts_date
-        (submitted_at),
-
-    KEY idx_drafts_drafted_by
-        (drafted_by),
-
-    CONSTRAINT fk_drafts_document
-        FOREIGN KEY (document_id)
-        REFERENCES documents(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_drafts_drafted_by
-        FOREIGN KEY (drafted_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_drafts_approving_leader
-        FOREIGN KEY (approving_leader_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_drafts_status (status),
+    KEY idx_drafts_date (submitted_at),
+    KEY idx_drafts_drafted_by (drafted_by),
+    CONSTRAINT fk_drafts_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_drafts_drafted_by FOREIGN KEY (drafted_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_drafts_approving_leader FOREIGN KEY (approving_leader_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE draft_comments (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     draft_document_id   BIGINT UNSIGNED NOT NULL,
-
     reviewer_id         BIGINT UNSIGNED NOT NULL,
-
     content             TEXT,
-
     sent_at             DATETIME NOT NULL,
-
     replied_at          DATETIME NULL,
-
     status              VARCHAR(50),
-
-    KEY idx_draft_comments_draft
-        (draft_document_id),
-
-    CONSTRAINT fk_draft_comments_draft
-        FOREIGN KEY (draft_document_id)
-        REFERENCES draft_documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_draft_comments_reviewer
-        FOREIGN KEY (reviewer_id)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_draft_comments_draft (draft_document_id),
+    CONSTRAINT fk_draft_comments_draft FOREIGN KEY (draft_document_id) REFERENCES draft_documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_draft_comments_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE draft_history (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     draft_document_id   BIGINT UNSIGNED NOT NULL,
-
     performed_by        BIGINT UNSIGNED NOT NULL,
-
     old_status          VARCHAR(100),
     new_status          VARCHAR(100),
-
     action              VARCHAR(100) NOT NULL,
-
     content             TEXT,
-
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_draft_history_draft
-        (draft_document_id),
-
-    CONSTRAINT fk_draft_history_draft
-        FOREIGN KEY (draft_document_id)
-        REFERENCES draft_documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_draft_history_user
-        FOREIGN KEY (performed_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_draft_history_draft (draft_document_id),
+    CONSTRAINT fk_draft_history_draft FOREIGN KEY (draft_document_id) REFERENCES draft_documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_draft_history_user FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE outgoing_documents (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     document_id         BIGINT UNSIGNED NULL,
-
+    draft_document_id   BIGINT UNSIGNED NULL,
     outgoing_number     VARCHAR(50),
-
     reference_number    VARCHAR(100),
-
     issue_date          DATE NOT NULL,
-
     subject             TEXT NOT NULL,
-
     drafted_by          BIGINT UNSIGNED NOT NULL,
-
     signed_by           BIGINT UNSIGNED NOT NULL,
-
-    status              ENUM(
-                            'DRAFTING',
-                            'PUBLISHED',
-                            'SUSPENDED',
-                            'RECALLED',
-                            'REPLACED',
-                            'RETAKEN'
-                        ) NOT NULL DEFAULT 'DRAFTING',
-
+    status              ENUM('DRAFTING', 'PUBLISHED', 'SUSPENDED', 'RECALLED', 'REPLACED', 'RETAKEN') NOT NULL DEFAULT 'DRAFTING',
+    attachment_name     VARCHAR(255),
+    attachment_path     VARCHAR(255),
     created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_outgoing_status
-        (status),
-
-    KEY idx_outgoing_issue_date
-        (issue_date),
-
-    KEY idx_outgoing_number
-        (outgoing_number),
-
-    CONSTRAINT fk_outgoing_document
-        FOREIGN KEY (document_id)
-        REFERENCES documents(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_drafted_by
-        FOREIGN KEY (drafted_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_signed_by
-        FOREIGN KEY (signed_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_outgoing_status (status),
+    KEY idx_outgoing_issue_date (issue_date),
+    KEY idx_outgoing_number (outgoing_number),
+    CONSTRAINT fk_outgoing_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_draft_document FOREIGN KEY (draft_document_id) REFERENCES draft_documents(id),
+    CONSTRAINT fk_outgoing_drafted_by FOREIGN KEY (drafted_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_signed_by FOREIGN KEY (signed_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE outgoing_recipients (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     outgoing_document_id    BIGINT UNSIGNED NOT NULL,
-
     unit_id                 BIGINT UNSIGNED NULL,
     department_id           BIGINT UNSIGNED NULL,
     user_id                 BIGINT UNSIGNED NULL,
     group_id                BIGINT UNSIGNED NULL,
-
     recipient_type          VARCHAR(50) NOT NULL,
-
     delivery_status         VARCHAR(50),
-
     sent_at                 DATETIME NULL,
-
-    KEY idx_outgoing_recipient_document
-        (outgoing_document_id),
-
-    CONSTRAINT fk_outgoing_recipients_document
-        FOREIGN KEY (outgoing_document_id)
-        REFERENCES outgoing_documents(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_recipients_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_recipients_department
-        FOREIGN KEY (department_id)
-        REFERENCES departments(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_recipients_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_outgoing_recipients_group
-        FOREIGN KEY (group_id)
-        REFERENCES frequent_groups(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_outgoing_recipient_document (outgoing_document_id),
+    CONSTRAINT fk_outgoing_recipients_document FOREIGN KEY (outgoing_document_id) REFERENCES outgoing_documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_recipients_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_recipients_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_recipients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_outgoing_recipients_group FOREIGN KEY (group_id) REFERENCES frequent_groups(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_records (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
+    code            VARCHAR(255),
+    record_number   VARCHAR(255),
     name            VARCHAR(500) NOT NULL,
-
     assigned_at     DATETIME NOT NULL,
     due_at          DATETIME NULL,
-
     created_by      BIGINT UNSIGNED NOT NULL,
-
-    status          ENUM(
-                        'PROCESSING',
-                        'COMPLETED'
-                    ) NOT NULL DEFAULT 'PROCESSING',
-
+    status          ENUM('PROCESSING', 'COMPLETED') NOT NULL DEFAULT 'PROCESSING',
     description     TEXT,
-
+    attachment_name VARCHAR(255),
+    attachment_path VARCHAR(255),
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_work_records_status
-        (status),
-
-    CONSTRAINT fk_work_records_created_by
-        FOREIGN KEY (created_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_work_records_status (status),
+    CONSTRAINT fk_work_records_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE works (
     id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     name                    VARCHAR(500) NOT NULL,
-
     incoming_document_id    BIGINT UNSIGNED NULL,
     work_record_id          BIGINT UNSIGNED NULL,
-
     assigned_by             BIGINT UNSIGNED NOT NULL,
-
     assigned_at             DATETIME NOT NULL,
     due_at                  DATETIME NULL,
-
-    work_type               ENUM(
-                                'RESPONSE_REQUIRED',
-                                'NO_RESPONSE_REQUIRED'
-                            ) NULL,
-
-    notification_type       ENUM(
-                                'OVERDUE',
-                                'NEAR_DEADLINE'
-                            ) NULL,
-
-    status                  ENUM(
-                                'UNPROCESSED',
-                                'PROCESSING',
-                                'COMPLETED',
-                                'SUSPENDED'
-                            ) NOT NULL DEFAULT 'UNPROCESSED',
-
+    work_type               ENUM('RESPONSE_REQUIRED', 'NO_RESPONSE_REQUIRED') NULL,
+    notification_type       ENUM('OVERDUE', 'NEAR_DEADLINE') NULL,
+    status                  ENUM('UNPROCESSED', 'PROCESSING', 'COMPLETED', 'SUSPENDED') NOT NULL DEFAULT 'UNPROCESSED',
     description             TEXT,
-
     created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                            ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_works_status
-        (status),
-
-    KEY idx_works_due_at
-        (due_at),
-
-    KEY idx_works_record
-        (work_record_id),
-
-    CONSTRAINT fk_works_incoming
-        FOREIGN KEY (incoming_document_id)
-        REFERENCES incoming_documents(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_works_record
-        FOREIGN KEY (work_record_id)
-        REFERENCES work_records(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_works_assigned_by
-        FOREIGN KEY (assigned_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    updated_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_works_status (status),
+    KEY idx_works_due_at (due_at),
+    KEY idx_works_record (work_record_id),
+    CONSTRAINT fk_works_incoming FOREIGN KEY (incoming_document_id) REFERENCES incoming_documents(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_works_record FOREIGN KEY (work_record_id) REFERENCES work_records(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_works_assigned_by FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_assignees (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     work_id         BIGINT UNSIGNED NOT NULL,
-
     user_id         BIGINT UNSIGNED NULL,
     unit_id         BIGINT UNSIGNED NULL,
-
-    KEY idx_work_assignees_work
-        (work_id),
-
-    CONSTRAINT fk_work_assignees_work
-        FOREIGN KEY (work_id)
-        REFERENCES works(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_assignees_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_assignees_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_work_assignees_work (work_id),
+    CONSTRAINT fk_work_assignees_work FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_work_assignees_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_work_assignees_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_collaborators (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     work_id         BIGINT UNSIGNED NOT NULL,
-
     user_id         BIGINT UNSIGNED NULL,
     unit_id         BIGINT UNSIGNED NULL,
-
-    KEY idx_work_collaborators_work
-        (work_id),
-
-    CONSTRAINT fk_work_collaborators_work
-        FOREIGN KEY (work_id)
-        REFERENCES works(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_collaborators_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_collaborators_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_work_collaborators_work (work_id),
+    CONSTRAINT fk_work_collaborators_work FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_work_collaborators_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_work_collaborators_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_history (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     work_id         BIGINT UNSIGNED NOT NULL,
-
     performed_by    BIGINT UNSIGNED NOT NULL,
-
     old_status      VARCHAR(50),
     new_status      VARCHAR(50),
-
     action          VARCHAR(100) NOT NULL,
-
     content         TEXT,
-
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_work_history_work
-        (work_id),
-
-    CONSTRAINT fk_work_history_work
-        FOREIGN KEY (work_id)
-        REFERENCES works(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_history_user
-        FOREIGN KEY (performed_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_work_history_work (work_id),
+    CONSTRAINT fk_work_history_work FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_work_history_user FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_record_members (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     work_record_id  BIGINT UNSIGNED NOT NULL,
-
     user_id         BIGINT UNSIGNED NULL,
     unit_id         BIGINT UNSIGNED NULL,
-
-    role            ENUM(
-                        'OWNER',
-                        'COLLABORATOR',
-                        'FOLLOWER'
-                    ) NOT NULL,
-
+    role            ENUM('OWNER', 'COLLABORATOR', 'FOLLOWER') NOT NULL,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_work_record_members_record
-        (work_record_id),
-
-    CONSTRAINT fk_work_record_members_record
-        FOREIGN KEY (work_record_id)
-        REFERENCES work_records(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_record_members_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_record_members_unit
-        FOREIGN KEY (unit_id)
-        REFERENCES units(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    KEY idx_work_record_members_record (work_record_id),
+    CONSTRAINT fk_work_record_members_record FOREIGN KEY (work_record_id) REFERENCES work_records(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_work_record_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_work_record_members_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE work_record_items (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     work_record_id  BIGINT UNSIGNED NOT NULL,
     work_id         BIGINT UNSIGNED NOT NULL,
-
-    UNIQUE KEY uk_work_record_item
-        (work_record_id, work_id),
-
-    CONSTRAINT fk_work_record_items_record
-        FOREIGN KEY (work_record_id)
-        REFERENCES work_records(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_work_record_items_work
-        FOREIGN KEY (work_id)
-        REFERENCES works(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    UNIQUE KEY uk_work_record_item (work_record_id, work_id),
+    CONSTRAINT fk_work_record_items_record FOREIGN KEY (work_record_id) REFERENCES work_records(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_work_record_items_work FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE files (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     file_name       VARCHAR(500) NOT NULL,
     storage_path    VARCHAR(1000) NOT NULL,
-
     mime_type       VARCHAR(150),
     file_size       BIGINT UNSIGNED,
-
     file_hash       VARCHAR(128),
-
     uploaded_by     BIGINT UNSIGNED NOT NULL,
-
     entity_type     VARCHAR(50),
     entity_id       BIGINT UNSIGNED,
-
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    KEY idx_files_entity
-        (entity_type, entity_id),
-
-    KEY idx_files_hash
-        (file_hash),
-
-    CONSTRAINT fk_files_uploaded_by
-        FOREIGN KEY (uploaded_by)
-        REFERENCES users(id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
+    KEY idx_files_entity (entity_type, entity_id),
+    KEY idx_files_hash (file_hash),
+    CONSTRAINT fk_files_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE help_documents (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
     name            VARCHAR(500) NOT NULL,
-
     file_id         BIGINT UNSIGNED NULL,
-
     view_count      INT UNSIGNED NOT NULL DEFAULT 0,
-
     published_at    DATETIME NOT NULL,
-
     status          TINYINT NOT NULL DEFAULT 1,
-
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-
-    KEY idx_help_documents_published_at
-        (published_at),
-
-    CONSTRAINT fk_help_documents_file
-        FOREIGN KEY (file_id)
-        REFERENCES files(id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_help_documents_published_at (published_at),
+    CONSTRAINT fk_help_documents_file FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-
-
 SET FOREIGN_KEY_CHECKS = 1;
-
-
-
-
 
 INSERT INTO units
 (
@@ -3256,5 +2553,3 @@ SELECT
 FROM information_schema.tables
 WHERE table_schema = DATABASE()
   AND table_type = 'BASE TABLE';
-
-

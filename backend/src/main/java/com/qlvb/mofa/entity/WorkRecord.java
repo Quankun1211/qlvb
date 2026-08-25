@@ -27,6 +27,9 @@ public class WorkRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String code;
+    private String recordNumber;
+
     @Column(nullable = false, length = 500)
     private String name;
 
@@ -60,4 +63,7 @@ public class WorkRecord {
     @OneToMany(mappedBy = "workRecord")
     @Builder.Default
     private List<WorkRecordItem> items = new ArrayList<>();
+
+    private String attachmentPath;
+    private String attachmentName;
 }
