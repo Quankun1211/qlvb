@@ -73,4 +73,14 @@ public class OutgoingDocument {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Column(name = "attachment_name")
+    private String attachmentName;
+
+    @Column(name = "attachment_path")
+    private String attachmentPath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "draft_document_id")
+    private DraftDocument draftDocument;
 }

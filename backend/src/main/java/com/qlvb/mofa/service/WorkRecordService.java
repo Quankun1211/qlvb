@@ -9,9 +9,13 @@ import com.qlvb.mofa.repository.UserRepository;
 import com.qlvb.mofa.repository.WorkRecordMemberRepository;
 import com.qlvb.mofa.repository.WorkRecordRepository;
 import com.qlvb.mofa.sercurity.SecurityUtils;
+import com.qlvb.mofa.service.minio.MinioService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,7 +28,7 @@ public class WorkRecordService {
     private final SecurityUtils securityUtils;
     private final UserRepository userRepository;
     private final WorkRecordMemberRepository workRecordMemberRepository;
-
+    private MinioService minioService;
     public Page<WorkRecordResponse> getCreatedWorkRecords(Pageable pageable) {
         Long currentUserId = securityUtils.getCurrentUserId();
         return workRecordRepository.findWorkRecordsCreatedByUser(currentUserId, pageable)
@@ -52,18 +56,30 @@ public class WorkRecordService {
     }
 
     @Transactional
-    public Long createWorkRecord(WorkRecordCreateRequest request) {
+    public Long createWorkRecord(WorkRecordCreateRequest request, org.springframework.web.multipart.MultipartFile file) {
         Long currentUserId = securityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng hiện tại"));
 
-        // Tạo mới hồ sơ công việc
+        String attachmentPath = null;
+        String attachmentName = null;
+
+        if (file != null && !file.isEmpty()) {
+            attachmentName = file.getOriginalFilename();
+            attachmentPath = minioService.uploadFile(file);
+        }
+
         WorkRecord workRecord = WorkRecord.builder()
+                .code(request.getCode())
+                .recordNumber(request.getRecordNumber())
                 .name(request.getName())
-                .assignedAt(request.getStartDate() != null ? request.getStartDate().atStartOfDay() : java.time.LocalDateTime.now())
+                .description(request.getDescription())
+                .assignedAt(request.getStartDate() != null ? request.getStartDate().atStartOfDay() : LocalDateTime.now())
                 .dueAt(request.getEndDate() != null ? request.getEndDate().atStartOfDay() : null)
                 .createdBy(currentUser)
-                .description(request.getDescription())
+                .attachmentPath(attachmentPath)
+                .attachmentName(attachmentName)
+                .status(com.qlvb.mofa.dto.enums.WorkRecordStatus.PROCESSING)
                 .build();
 
         WorkRecord savedRecord = workRecordRepository.save(workRecord);
@@ -80,5 +96,17 @@ public class WorkRecordService {
         }
 
         return savedRecord.getId();
+    }
+
+    public Page<WorkRecordResponse> getParticipatedWorkRecords(Pageable pageable) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        return workRecordRepository.findWorkRecordsParticipatedByUser(currentUserId, pageable)
+                .map(this::toResponse);
+    }
+
+    public Page<WorkRecordResponse> getFollowedWorkRecords(Pageable pageable) {
+        Long currentUserId = securityUtils.getCurrentUserId();
+        return workRecordRepository.findWorkRecordsFollowedByUser(currentUserId, pageable)
+                .map(this::toResponse);
     }
 }
