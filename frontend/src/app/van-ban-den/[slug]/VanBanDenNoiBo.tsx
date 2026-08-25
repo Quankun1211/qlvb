@@ -17,6 +17,7 @@ export default function VanBanDenNoiBo() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
 
   const [selectedYear, setSelectedYear] = useState("2026");
@@ -154,7 +155,10 @@ export default function VanBanDenNoiBo() {
                     <Info className="w-4 h-4 text-[#005fb8] mt-0.5 mr-1.5 shrink-0" fill="#e0f2fe" />
                     <span 
                       className="text-[#005fb8] hover:underline cursor-pointer font-medium leading-relaxed"
-                      onClick={() => setShowDetailModal(true)}
+                      onClick={() => {
+                        setSelectedDocumentId(row.id);
+                        setShowDetailModal(true);
+                      }}
                     >
                       {row.trichYeu}
                     </span>
@@ -280,6 +284,7 @@ export default function VanBanDenNoiBo() {
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
         title="Chi tiết văn bản đến nội bộ"
+        documentId={selectedDocumentId}
       />
     </div>
   );

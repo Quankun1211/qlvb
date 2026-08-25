@@ -13,4 +13,8 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
             Byte status
     );
 
+    List<Unit> findByParentIsNullAndStatus(Byte status);
+
+    List<Unit> findByStatus(Byte status);
+
 }

@@ -86,7 +86,8 @@ public class SecurityConfig {
                     // PUBLIC
                     .requestMatchers(
                             "/api/auth/login",
-                            "/api/auth/refresh"
+                            "/api/auth/refresh",
+                            "/api/auth/presigned-url"
                     ).permitAll()
 
                     .requestMatchers(
