@@ -2,9 +2,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Search, RefreshCcw, X, ChevronDown } from "lucide-react";
-import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { Search, RefreshCcw, ChevronDown, CheckCircle, XCircle, X } from "lucide-react";
+import CongViecDetailModal from "@/components/shared/CongViecDetailModal";
+import { workService } from "@/services/apiService";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import Pagination from "../../van-ban-den/[slug]/Pagination";
 
 const loaiThongBaoList = ["Quá hạn", "Sắp hết hạn"];
 const trangThaiList = ["Chưa xử lý", "Đang xử lý", "Đã kết thúc", "Tạm dừng"];
@@ -94,11 +96,50 @@ export default function CongViecDuocGiao() {
     return createPortal(content, document.body);
   };
 
-  const dummyData: any[] = [
-    { tenCongViec: "Chuẩn bị báo cáo công tác tuần 4", hanXuLy: "28/08/2026", ngayGiao: "25/08/2026", ngNc: "Người giao 1", chuTri: "Nguyễn Văn A", phoiHop: "Phòng Hành chính", trangThai: "Chưa xử lý" },
-    { tenCongViec: "Đánh giá kết quả triển khai dự án", hanXuLy: "30/08/2026", ngayGiao: "24/08/2026", ngNc: "Người giao 2", chuTri: "Trần Thị B", phoiHop: "Phòng Kế toán", trangThai: "Đang xử lý" },
-    { tenCongViec: "Họp giao ban định kỳ", hanXuLy: "26/08/2026", ngayGiao: "23/08/2026", ngNc: "Người giao 1", chuTri: "Lê Văn C", phoiHop: "", trangThai: "Đã kết thúc" }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await workService.getAssignedToMe(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "UNPROCESSED": "Chưa xử lý",
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Đã kết thúc",
+          "REJECTED": "Đã từ chối"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            tenCongViec: item.name || "Không có tên",
+            hanXuLy: formatDate(item.dueAt),
+            ngayGiao: formatDate(item.assignedAt),
+            ngNc: item.assignerName || "Chưa rõ",
+            chuTri: (item.assigneeNames || []).join(", ") || "Chưa rõ",
+            phoiHop: (item.collaboratorNames || []).join(", "),
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData = apiData;
 
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
 
@@ -215,6 +256,11 @@ export default function CongViecDuocGiao() {
       </div>
 
       <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px] mb-4">
           <thead>
             <tr>
@@ -258,6 +304,7 @@ export default function CongViecDuocGiao() {
             )}
           </tbody>
         </table>
+        )}
         
         {filteredData.length > 0 && (
           <Pagination 

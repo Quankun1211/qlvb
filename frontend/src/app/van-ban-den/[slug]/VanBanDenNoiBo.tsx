@@ -7,6 +7,7 @@ import {
 import { AttachmentModal, PDFDetailModal } from "./SharedModals";
 import Pagination from "./Pagination";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import { incomingService } from "@/services/apiService";
 
 export default function VanBanDenNoiBo() {
   const [mounted, setMounted] = useState(false);
@@ -25,16 +26,49 @@ export default function VanBanDenNoiBo() {
     return createPortal(content, document.body);
   };
 
-  const dummyData = [
-    {
-      id: 1, soDen: 4063, soKyHieu: "62/CYTT-DU", trichYeu: "KL của BCH ĐUC CY-CNTT v/v kéo dài nhiệm kỳ đại hội của các chi bộ trực thuộc",
-      ngayDen: "20/08/2026", coQuan: "Cục Cơ yếu-Công nghệ thông tin", trangThai: "Đang xử lý"
-    },
-    {
-      id: 2, soDen: 4034, soKyHieu: "1512/CYTT-NC", trichYeu: "v/v tăng cường bảo mật, đảm bảo an toàn an ninh đối với các hệ thống thông tin của Bộ Ngoại giao",
-      ngayDen: "18/08/2026", coQuan: "Cục Cơ yếu-Công nghệ thông tin", trangThai: "Đã kết thúc"
-    }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await incomingService.getInternal(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "UNPROCESSED": "Chưa xử lý",
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Hoàn thành",
+          "SUSPENDED": "Tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any, index: number) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            soDen: item.incomingNumber || "",
+            soKyHieu: item.documentNumber || "",
+            trichYeu: item.summary || "Không có",
+            ngayDen: formatDate(item.receivedDate) || "Chưa cập nhật",
+            coQuan: item.issuingAgency || "Chưa rõ",
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData = apiData;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -97,7 +131,16 @@ export default function VanBanDenNoiBo() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((row) => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={8} className="py-20 text-center">
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
+            paginatedData.map((row) => (
               <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors">
                 <td className="p-2 border-r border-gray-200 text-center align-top pt-3">
                   <input type="checkbox" className="rounded border-gray-300" />
@@ -130,9 +173,17 @@ export default function VanBanDenNoiBo() {
                   </button>
                 </td>
               </tr>
-            ))}
+            ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-gray-800 bg-gray-50/50 border border-gray-200 font-medium">
+                  Không có dữ liệu
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+        {dummyData.length > 0 && (
         <Pagination 
           currentPage={currentPage} 
           pageSize={pageSize} 
@@ -140,6 +191,7 @@ export default function VanBanDenNoiBo() {
           onPageChange={setCurrentPage} 
           onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }} 
         />
+        )}
       </div>
 
       {/* ADVANCED SEARCH MODAL */}

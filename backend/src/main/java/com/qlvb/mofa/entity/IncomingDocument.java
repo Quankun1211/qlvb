@@ -59,6 +59,9 @@ public class IncomingDocument {
     @JoinColumn(name = "receiving_unit_id", nullable = false)
     private Unit receivingUnit;
 
+    @Column(name = "due_at")
+    private LocalDate dueAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

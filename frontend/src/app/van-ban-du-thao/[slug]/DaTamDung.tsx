@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
+import { Search, RefreshCcw, X, Download, Eye, FileText, Play } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { draftService } from "@/services/apiService";
 import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
 
 const allStatuses = [
@@ -80,14 +81,41 @@ export default function DaTamDung() {
     return createPortal(content, document.body);
   };
 
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const dummyData: any[] = [
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "25/08/2026", title: "Xin ý kiến dự thảo tờ trình của BTGDV", trangThai: "Đã tạm dừng" },
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "25/08/2026", title: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", trangThai: "Đã tạm dừng" },
-    { nguoi: "Lưu Anh Tuấn", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Xin cấp HNCG", trangThai: "Đã tạm dừng" },
-    { nguoi: "Đậu Việt Đức", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", trangThai: "Đã tạm dừng" },
-    { nguoi: "Lê Mai Phượng", doiTuong: "Nguyễn Như Trung", ngay: "23/08/2026", title: "Góp ý TKCT của BCKTKT dự án LPQT 2026", trangThai: "Đã tạm dừng" }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await draftService.getSuspended(0, 1000);
+        
+        const mapped = (res.content || []).map((item: any) => {
+          let dateStr = "";
+          if (item.submittedAt || item.createdAt) {
+            const d = new Date(item.submittedAt || item.createdAt);
+            dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          }
+          return {
+            id: item.id,
+            nguoi: item.draftedByName || "Chưa rõ",
+            doiTuong: item.approvingLeaderName || "Chưa rõ",
+            ngay: dateStr,
+            title: item.subject || "Không có trích yếu",
+            trangThai: "Đã tạm dừng"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData: any[] = apiData;
 
   const [isAdvSearchActive, setIsAdvSearchActive] = useState(false);
 
@@ -103,7 +131,7 @@ export default function DaTamDung() {
     setCurrentPage(1);
   };
 
-  let filteredData = dummyData.filter(row => row.trangThai === "Đã tạm dừng");
+  let filteredData = dummyData;
 
   if (isAdvSearchActive) {
     if (advSearch.noiDung) {
@@ -121,8 +149,6 @@ export default function DaTamDung() {
     if (advSearch.ngayTrinhTo) {
       filteredData = filteredData.filter(row => row.ngayTrinhISO && row.ngayTrinhISO <= advSearch.ngayTrinhTo);
     }
-  } else {
-    // Basic search is only applied if advanced search is NOT active, or you can apply both. Let's apply both for safety.
   }
 
     const removeAccents = (str: string | undefined | null) => {
@@ -190,10 +216,15 @@ export default function DaTamDung() {
       </div>
 
       <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px] mb-4">
           <thead>
             <tr>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn thảo</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Lãnh đạo ký duyệt</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[10%]">Ngày trình</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[50%]">Về việc</th>
@@ -229,6 +260,7 @@ export default function DaTamDung() {
             )}
           </tbody>
         </table>
+        )}
         
         {filteredData.length > 0 && (
           <Pagination 

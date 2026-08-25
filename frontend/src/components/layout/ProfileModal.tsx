@@ -12,6 +12,8 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   
+  const [user, setUser] = useState<any>(null);
+  
   // File upload states
   const [cyFile, setCyFile] = useState<File | null>(null);
   const [simFile, setSimFile] = useState<File | null>(null);
@@ -24,6 +26,13 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       setCyFile(null);
       setSimFile(null);
       setNhaySimFile(null);
+      
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          setUser(JSON.parse(userStr));
+        } catch (e) {}
+      }
     }
   }, [isOpen]);
 
@@ -93,11 +102,11 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-[13px] text-gray-900">
           {!isEditMode ? (
             <div className="grid grid-cols-2 gap-y-5 gap-x-8 px-2">
-              <div><span className="font-bold">Tên cán bộ:</span> Lê Nhật Minh</div>
-              <div><span className="font-bold">Tài khoản:</span> lnm5569</div>
+              <div><span className="font-bold">Tên cán bộ:</span> {user?.fullName || "Chưa cập nhật"}</div>
+              <div><span className="font-bold">Tài khoản:</span> {user?.username || "Chưa cập nhật"}</div>
               
-              <div><span className="font-bold">Ngày sinh:</span> 01/01/0001</div>
-              <div><span className="font-bold">Email:</span> lnm5569@mofa.gov.vn</div>
+              <div><span className="font-bold">Ngày sinh:</span> Chưa cập nhật</div>
+              <div><span className="font-bold">Email:</span> {user?.email || "Chưa cập nhật"}</div>
               
               <div><span className="font-bold">Đơn vị:</span> Cục Cơ yếu-Công nghệ thông tin</div>
               <div><span className="font-bold">Phòng ban:</span> Phòng Quản lý kỹ thuật nghiệp vụ mật mã</div>
@@ -127,11 +136,11 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-gray-700">Tên cán bộ<span className="text-red-500">(*)</span></label>
-                  <input type="text" defaultValue="Lê Nhật Minh" className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white" />
+                  <input type="text" defaultValue={user?.fullName || ""} className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-gray-700">Email<span className="text-red-500">(*)</span></label>
-                  <input type="email" defaultValue="lnm5569@mofa.gov.vn" className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white" />
+                  <input type="email" defaultValue={user?.email || ""} className="border border-gray-300 rounded px-3 py-1.5 focus:border-[#005fb8] focus:outline-none text-gray-900 bg-white" />
                 </div>
                 
                 <div className="flex flex-col gap-1">

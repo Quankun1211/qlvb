@@ -8,6 +8,7 @@ import {
 import { AttachmentModal, WordDetailModal } from "./SharedModals";
 import Pagination from "./Pagination";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import { incomingService } from "@/services/apiService";
 
 export default function VanBanDenCuaToi() {
   const [mounted, setMounted] = useState(false);
@@ -53,19 +54,54 @@ export default function VanBanDenCuaToi() {
     setCurrentPage(1);
   };
 
-  const dummyData = [
-    {
-      id: 1, stt: 1, soDen: 4066, soKyHieu: "2918/VP-TĐKT", tenCongViec: "V/v góp ý Bộ chỉ tiêu thi đua",
-      hanXL: "", ngayGiao: "21/08/2026", nguoiGiao: "Phan Văn Nhân", cbdvCT: "Mai Thùy Giang",
-      cbdvPH: ["Nguyễn Thị Thu Hằng", "Bùi Hữu Việt", "Nguyễn Vũ Tuyên", "Chu Phúc Hà", "Lê Nhật Minh", "Lưu Anh Tuấn", "Phan Văn Nhân", "Lê Đức Kiên", "Lê Quang Tiến"], trangThai: "Chưa xử lý",
-    },
-    {
-      id: 2, stt: 2, soDen: 592, soKyHieu: "4444/QĐ-BQP",
-      tenCongViec: "Về việc công bố thủ tục hành chính bị bãi bỏ trong lĩnh vực cơ yếu thuộc phạm vi chức năng quản lý của Bộ Quốc phòng",
-      hanXL: "", ngayGiao: "19/08/2026", nguoiGiao: "Phan Văn Nhân", cbdvCT: "Lưu Anh Tuấn",
-      cbdvPH: ["Nguyễn Thị Thu Hằng", "Bùi Hữu Việt"], trangThai: "Hoàn thành",
-    }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await incomingService.getMyIncoming(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "UNPROCESSED": "Chưa xử lý",
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Hoàn thành",
+          "SUSPENDED": "Tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any, index: number) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            stt: index + 1,
+            soDen: item.incomingNumber || "",
+            soKyHieu: item.documentNumber || "",
+            tenCongViec: item.summary || "Không có",
+            hanXL: formatDate(item.dueAt) || "Chưa cập nhật",
+            ngayGiao: formatDate(item.receivedDate) || "Chưa cập nhật",
+            nguoiGiao: item.issuingAgency || "Chưa rõ",
+            cbdvCT: item.handlingUnit || "Chưa rõ",
+            cbdvPH: [],
+            trangThai: statusMap[item.status] || item.status,
+            isHoaToc: item.urgencyLevel === "Hỏa tốc"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData = apiData;
 
   let filteredData = dummyData.filter(row => trangThai.includes(row.trangThai));
 
@@ -171,7 +207,15 @@ export default function VanBanDenCuaToi() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={12} className="py-20 text-center">
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
               paginatedData.map(row => (
                 <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50/50">
                   <td className="p-2 border-r border-gray-200 text-center align-top pt-3 text-gray-900">{row.stt}</td>

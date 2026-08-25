@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { draftService } from "@/services/apiService";
 import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
 
 const allStatuses = [
@@ -31,6 +32,8 @@ export default function DaKyDaPheDuyet() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Advanced search form
   const [advSearch, setAdvSearch] = useState({
@@ -50,6 +53,35 @@ export default function DaKyDaPheDuyet() {
   const pbRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await draftService.getApproved(0, 1000);
+        
+        const mapped = (res.content || []).map((item: any) => {
+          let dateStr = "";
+          if (item.submittedAt || item.createdAt) {
+            const d = new Date(item.submittedAt || item.createdAt);
+            dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          }
+          return {
+            id: item.id,
+            nguoi: item.draftedByName || "Chưa rõ",
+            doiTuong: item.approvingLeaderName || "Chưa rõ",
+            ngay: dateStr,
+            title: item.subject || "Không có trích yếu",
+            trangThai: "Đã phê duyệt"
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+
     function handleClickOutside(event: MouseEvent) {
       if (statusRef.current && !statusRef.current.contains(event.target as Node)) {
         setShowStatusDropdown(false);
@@ -81,18 +113,7 @@ export default function DaKyDaPheDuyet() {
   };
 
 
-  const dummyData: any[] = [
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "24/08/2026", title: "Xin ý kiến dự thảo tờ trình của BTGDV", trangThai: "Đã phát hành" },
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "24/08/2026", title: "V/v Đăng ký cơ sở hạ tầng CNTT tại Trung tâm dữ liệu quốc gia cho CSDL quốc gia về cam kết quốc tế", trangThai: "Đã phát hành" },
-    { nguoi: "Lưu Anh Tuấn", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Xin cấp HNCG", trangThai: "Đã phát hành" },
-    { nguoi: "Đậu Việt Đức", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Ý kiến chỉ đạo và kết luận của Lãnh đạo Bộ tại cuộc họp về CĐS ngày 22/8 - định kỳ lần thứ 10", trangThai: "Đã phát hành" },
-    { nguoi: "Lê Mai Phượng", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Góp ý TKCT của BCKTKT dự án LPQT 2026", trangThai: "Đã phát hành" },
-    { nguoi: "Kiều Việt Hùng", doiTuong: "Nguyễn Như Trung", ngay: "22/08/2026", title: "Về cung cấp thông tin phục vụ CV số 4431/TGV ngày 21/8/2026 của Tổ Giúp việc", trangThai: "Đã phát hành" },
-    { nguoi: "Phạm Trung Dũng", doiTuong: "Nguyễn Như Trung", ngay: "22/08/2026", title: "Công văn gửi Cục NVVH đ/n cho ý kiến đối với Báo cáo đề xuất chủ trương đầu tư Dự án \"Nâng cấp phần mềm Cơ sở dữ liệu chuyên ngành Ngoại vụ phục vụ công tác chỉ đạo, điều hành đơn vị\" của SNV thành phố Đà Nẵng.", trangThai: "Đã phát hành" },
-    { nguoi: "Đậu Việt Đức", doiTuong: "Nguyễn Như Trung", ngay: "21/08/2026", title: "Báo cáo tình hình triển khai nhiệm vụ CĐS tuần 4 tháng 8", trangThai: "Đã phát hành" },
-    { nguoi: "Nguyễn Tiến Nam", doiTuong: "Nguyễn Như Trung", ngay: "21/08/2026", title: "Công văn gửi Văn phòng Bộ trưởng về các câu hỏi về AI để trao đổi với Bộ Ngoại giao Singapore.", trangThai: "Đã phát hành" },
-    { nguoi: "Nguyễn Thị Mỹ Nguyệt", doiTuong: "Nguyễn Như Trung", ngay: "21/08/2026", title: "Phúc công văn 2978_QTTV", trangThai: "Đã phát hành" }
-  ];
+  const dummyData: any[] = apiData;
 
   const [isAdvSearchActive, setIsAdvSearchActive] = useState(false);
 
@@ -108,7 +129,7 @@ export default function DaKyDaPheDuyet() {
     setCurrentPage(1);
   };
 
-  let filteredData = dummyData.filter(row => row.trangThai === "Đã phát hành");
+  let filteredData = dummyData;
 
   if (isAdvSearchActive) {
     if (advSearch.noiDung) {
@@ -195,10 +216,15 @@ export default function DaKyDaPheDuyet() {
       </div>
 
       <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px] mb-4">
           <thead>
             <tr>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn thảo</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Lãnh đạo ký duyệt</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[10%]">Ngày trình</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[50%]">Về việc</th>
@@ -221,7 +247,7 @@ export default function DaKyDaPheDuyet() {
                     </span>
                   </td>
                   <td className="py-2.5 px-3 border border-gray-300 text-center">
-                    <span className="inline-block px-3 py-1 bg-[#198754] text-white text-[11px] font-bold rounded-full">Đã phát hành</span>
+                    <span className="inline-block px-3 py-1 bg-[#198754] text-white text-[11px] font-bold rounded-full">{row.trangThai}</span>
                   </td>
                 </tr>
               ))
@@ -234,6 +260,7 @@ export default function DaKyDaPheDuyet() {
             )}
           </tbody>
         </table>
+        )}
 
         {filteredData.length > 0 && (
           <Pagination

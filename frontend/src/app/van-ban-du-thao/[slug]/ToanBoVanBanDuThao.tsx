@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
+import { draftService } from "@/services/apiService";
 
 const allStatuses = [
   "Đang soạn thảo", "Đang xin ý kiến", "Đang trình LĐ đơn vị", "Đã phê duyệt", 
@@ -133,12 +134,50 @@ export default function ToanBoVanBanDuThao() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const dummyData: any[] = [
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "24/08/2026", title: "Xin ý kiến dự thảo tờ trình của BTGDV", trangThai: "Đang xin ý kiến" },
-    { nguoi: "Lưu Anh Tuấn", doiTuong: "Nguyễn Như Trung", ngay: "24/08/2026", title: "Xin cấp HNCG", trangThai: "Đã phê duyệt" },
-    { nguoi: "Đậu Việt Đức", doiTuong: "Nguyễn Như Trung", ngay: "23/08/2026", title: "Báo cáo tình hình triển khai nhiệm vụ", trangThai: "Đang soạn thảo" }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch up to 1000 records for frontend filtering as requested by user previously
+        const res = await draftService.getAll(0, 1000);
+        
+        // Map backend DTO to frontend format
+        const statusMap: Record<string, string> = {
+          "DRAFTING": "Đang soạn thảo",
+          "REQUESTING_OPINION": "Đang xin ý kiến",
+          "APPROVED": "Đã phê duyệt",
+          "SUSPENDED": "Đã tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          let dateStr = "";
+          if (item.submittedAt) {
+            const d = new Date(item.submittedAt);
+            dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          }
+          return {
+            id: item.id,
+            nguoi: item.draftedByName || "Chưa rõ",
+            doiTuong: item.approvingLeaderName || "Chưa rõ",
+            ngay: dateStr,
+            title: item.subject || "Không có tiêu đề",
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
   
+  const dummyData = apiData;
   const [isAdvSearchActive, setIsAdvSearchActive] = useState(false);
 
   const handleAdvancedSearch = () => {
@@ -275,6 +314,11 @@ export default function ToanBoVanBanDuThao() {
       </div>
 
       <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px] mb-4">
           <thead>
             <tr>
@@ -314,6 +358,7 @@ export default function ToanBoVanBanDuThao() {
             )}
           </tbody>
         </table>
+        )}
         
         {filteredData.length > 0 && (
           <Pagination 

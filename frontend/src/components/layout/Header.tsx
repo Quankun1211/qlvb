@@ -15,6 +15,7 @@ export default function Header() {
   const [showDonVi, setShowDonVi] = useState(false);
   const [showDoiMatKhau, setShowDoiMatKhau] = useState(false);
   const [showNotiDropdown, setShowNotiDropdown] = useState(false);
+  const [userName, setUserName] = useState("Người dùng");
   const notiRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -24,6 +25,18 @@ export default function Header() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+    
+    // Read user from local storage
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user && user.fullName) {
+          setUserName(user.fullName);
+        }
+      } catch (e) {}
+    }
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -62,7 +75,7 @@ export default function Header() {
         <div className="flex flex-col items-end text-xs space-y-1 relative z-10 mt-1">
           <div className="flex space-x-4">
              <div className="flex font-medium">
-                <button onClick={() => setShowProfile(true)} className="text-white hover:underline cursor-pointer">Lê Nhật Minh</button>
+                <button onClick={() => setShowProfile(true)} className="text-white hover:underline cursor-pointer">{userName}</button>
                 <button onClick={() => setShowDonVi(true)} className="text-yellow-400 hover:underline cursor-pointer ml-1">- Cơ yếu</button>
              </div>
              <span className="font-bold text-yellow-400">Hotline: 3799 5658</span>
@@ -106,6 +119,7 @@ export default function Header() {
             <button 
               onClick={() => {
                 localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("token");
                 router.push("/login");
               }}
               className="flex items-center hover:text-yellow-300 transition-colors"

@@ -13,34 +13,11 @@ import QuanLyNhomDonVi from "./QuanLyNhomDonVi";
 import { AttachmentModal, WordDetailModal } from "./SharedModals";
 import Pagination from "./Pagination";
 import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import { incomingService } from "@/services/apiService";
 
 // --- DUMMY DATA ---
-const dummyData = [
-  {
-    id: 1,
-    soDen: 4128,
-    soKyHieu: "2964/VP-TKBT",
-    trichYeu: "V/v Đôn đốc nhắc việc 24/8",
-    isHoaToc: true,
-    ngayDen: "24/08/2026",
-    hanXuLy: null,
-    coQuan: "Văn phòng Bộ",
-    chuTri: "Cục Cơ yếu-Công nghệ thông tin",
-    trangThai: "Đang xử lý",
-  },
-  {
-    id: 2,
-    soDen: 2531,
-    soKyHieu: "6506/BKHCN-KHTC",
-    trichYeu: "V/v góp ý dự thảo Quyết định của Thủ tướng Chính phủ phê duyệt Phương án chấm điểm các bộ, cơ quan trung ương và địa phương về kết quả giải ngân vốn lĩnh vực khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số",
-    isHoaToc: false,
-    ngayDen: "24/08/2026",
-    hanXuLy: "27/08/2026",
-    coQuan: "Bộ Khoa học và Công nghệ",
-    chuTri: "Cục Quản trị tài vụ",
-    trangThai: "Chưa xử lý",
-  }
-];
+// --- DUMMY DATA ---
+// Moved into component for state management
 
 const mockAttachments = [
   "CV_Don_doc_nhac_viec_2408-baa95e06699b4d5087b04ee49e5a2dbc.docx",
@@ -115,6 +92,54 @@ export default function VanBanDenPage() {
       default: return `Danh sách văn bản đến`;
     }
   };
+
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (slug !== 'toan-bo-van-ban-den-don-vi' && slug) return; // Only fetch for the main page
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await incomingService.getUnitIncoming(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "UNPROCESSED": "Chưa xử lý",
+          "IN_PROGRESS": "Đang xử lý",
+          "COMPLETED": "Đã hoàn thành",
+          "SUSPENDED": "Đã tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          };
+          return {
+            id: item.id,
+            soDen: item.incomingNumber || "",
+            soKyHieu: item.documentNumber || "",
+            trichYeu: item.summary || "Không có trích yếu",
+            isHoaToc: item.urgencyLevel === "Hỏa tốc",
+            ngayDen: formatDate(item.receivedDate),
+            hanXuLy: formatDate(item.dueAt) || "Chưa cập nhật", // dueAt might not exist in backend yet
+            coQuan: item.issuingAgency || "Chưa rõ",
+            chuTri: item.handlingUnit || "Chưa rõ",
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [slug]);
+
+  const dummyData = apiData;
 
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
 
@@ -234,6 +259,11 @@ export default function VanBanDenPage() {
 
       {/* --- DATA TABLE --- */}
       <div className="overflow-x-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="bg-white border-b border-gray-300 text-gray-900">
@@ -323,6 +353,7 @@ export default function VanBanDenPage() {
             )}
           </tbody>
         </table>
+        )}
         <Pagination 
           currentPage={currentPage} 
           pageSize={pageSize} 

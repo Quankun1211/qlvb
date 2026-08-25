@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, ChevronRight, UploadCloud, UserPlus, Ban, ChevronsLeft, ChevronLeft, ChevronsRight } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
+import { draftService } from "@/services/apiService";
 import VanBanDuThaoDetailModal from "@/components/shared/VanBanDuThaoDetailModal";
 
 const allStatuses = [
@@ -132,10 +133,49 @@ export default function DangSoanThaoXinYKien() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const dummyData: any[] = [
-    { nguoi: "Đỗ Văn Điển", doiTuong: "Nguyễn Đăng Lâm", ngay: "24/08/2026", title: "Xin ý kiến dự thảo tờ trình", yKien: [{name: "Nguyễn Văn A"}], trangThai: "Đang xin ý kiến" },
-    { nguoi: "Đậu Việt Đức", doiTuong: "Nguyễn Như Trung", ngay: "23/08/2026", title: "Báo cáo tình hình triển khai nhiệm vụ", yKien: [], trangThai: "Đang soạn thảo" }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await draftService.getDraftingOrOpinion(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "DRAFTING": "Đang soạn thảo",
+          "REQUESTING_OPINION": "Đang xin ý kiến",
+          "APPROVED": "Đã phê duyệt",
+          "SUSPENDED": "Đã tạm dừng"
+        };
+        
+        const mapped = (res.content || []).map((item: any) => {
+          let dateStr = "";
+          if (item.submittedAt || item.createdAt) {
+            const d = new Date(item.submittedAt || item.createdAt);
+            dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          }
+          return {
+            id: item.id,
+            nguoi: item.draftedByName || "Chưa rõ",
+            doiTuong: item.approvingLeaderName || "Chưa rõ",
+            ngay: dateStr,
+            title: item.subject || "Không có trích yếu",
+            yKien: [],
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData = apiData;
   
   const [isAdvSearchActive, setIsAdvSearchActive] = useState(false);
 
@@ -169,11 +209,9 @@ export default function DangSoanThaoXinYKien() {
     if (advSearch.ngayTrinhTo) {
       filteredData = filteredData.filter(row => row.ngayTrinhISO && row.ngayTrinhISO <= advSearch.ngayTrinhTo);
     }
-  } else {
-    // Basic search is only applied if advanced search is NOT active, or you can apply both. Let's apply both for safety.
   }
 
-    const removeAccents = (str: string | undefined | null) => {
+  const removeAccents = (str: string | undefined | null) => {
     if (!str) return "";
     return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   };
@@ -181,17 +219,8 @@ export default function DangSoanThaoXinYKien() {
     const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
       removeAccents(row.title).includes(kw) ||
-      removeAccents(row.so).includes(kw) ||
       removeAccents(row.nguoi).includes(kw)
     );
-  }
-
-  if (activeDateFilter === "today") {
-    filteredData = filteredData.filter(row => row.ngay === "25/08/2026");
-  } else if (activeDateFilter === "yesterday") {
-    filteredData = filteredData.filter(row => row.ngay === "24/08/2026");
-  } else if (activeDateFilter === "this_week") {
-    filteredData = filteredData.filter(row => row.ngay === "25/08/2026" || row.ngay === "24/08/2026");
   }
 
   const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -273,10 +302,15 @@ export default function DangSoanThaoXinYKien() {
       </div>
 
       <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
         <table className="w-full border-collapse text-[13px] mb-4">
           <thead>
             <tr>
-              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn</th>
+              <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Người soạn thảo</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[15%]">Lãnh đạo ký duyệt</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[10%]">Ngày trình</th>
               <th className="py-2.5 px-3 border border-gray-300 text-center font-bold text-gray-800 bg-white w-[30%]">Về việc</th>
@@ -316,6 +350,7 @@ export default function DangSoanThaoXinYKien() {
             )}
           </tbody>
         </table>
+        )}
         
         {filteredData.length > 0 && (
           <Pagination 

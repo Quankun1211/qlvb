@@ -237,6 +237,10 @@ public class IncomingDocumentService {
                         incomingDocument.getReceivedDate()
                 )
 
+                .dueAt(
+                        incomingDocument.getDueAt()
+                )
+
                 .issuingAgency(
                         document != null
                                 && document.getIssuingUnit() != null

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, Paperclip } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
 import VanBanTrinhDetailModal from "@/components/shared/VanBanTrinhDetailModal";
+import { submissionService } from "@/services/apiService";
 
 const allStatuses = [
   "Đang soạn thảo", "Đang xin ý kiến", "Đang trình LĐ đơn vị", "Đã phê duyệt", 
@@ -89,10 +90,52 @@ export default function ToanBoVanBanTrinh() {
     setCurrentPage(1);
   };
 
-  const dummyData: any[] = [
-    { stt: 1, so: "421/TTr-CYTT", title: "V/v ban hành quy định về quản lý chứng thư số", nguoi: "Lê Nhật Minh", ngay: "24/08/2026", phong: "Phòng Nghiệp vụ", doiTuong: "Cục trưởng", trangThai: "Đã phê duyệt" },
-    { stt: 2, so: "422/TTr-CYTT", title: "Tờ trình xin cấp trang thiết bị CNTT năm 2026", nguoi: "Lê Nhật Minh", ngay: "25/08/2026", phong: "Phòng Hành chính", doiTuong: "Cục phó", trangThai: "Đang trình LĐ đơn vị" }
-  ];
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await submissionService.getAll(0, 1000);
+        
+        const statusMap: Record<string, string> = {
+          "DRAFTING": "Đang soạn thảo",
+          "REQUESTING_OPINION": "Đang trình LĐ đơn vị",
+          "APPROVED": "Đã phê duyệt",
+          "REJECTED": "Bị trả về",
+          "PUBLISHED": "Đã phát hành"
+        };
+        
+        const mapped = (res.content || []).map((item: any, index: number) => {
+          let dateStr = "";
+          if (item.submittedAt || item.createdAt) {
+            const d = new Date(item.submittedAt || item.createdAt);
+            dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+          }
+          return {
+            id: item.id,
+            stt: index + 1,
+            so: item.submissionNumber || "",
+            title: item.subject || "Không có trích yếu",
+            nguoi: item.draftedByName || "Chưa rõ",
+            ngay: dateStr,
+            phong: item.departmentName || "Chưa rõ",
+            doiTuong: item.target || "Chưa rõ",
+            trangThai: statusMap[item.status] || item.status
+          };
+        });
+        setApiData(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dummyData = apiData;
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
 
     const removeAccents = (str: string | undefined | null) => {
@@ -193,8 +236,13 @@ export default function ToanBoVanBanTrinh() {
         </div>
       </div>
 
-      <div className="w-full">
-        <table className="w-full table-fixed border-collapse text-[13px]">
+      <div className="p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#005fb8]"></div>
+          </div>
+        ) : (
+        <table className="w-full table-fixed border-collapse text-[13px] mb-4">
           <thead>
             <tr className="bg-white border-b border-gray-200 text-gray-800 text-center">
               <th className="p-2 border-r border-gray-200 font-bold w-[50px]">STT</th>
@@ -247,8 +295,9 @@ export default function ToanBoVanBanTrinh() {
             )}
           </tbody>
         </table>
+        )}
         
-        {/* We always render Pagination even if empty to match the design pattern in the screenshot, or conditionally. The screenshot shows "Không có dữ liệu" but I'll add Pagination */}
+        {filteredData.length > 0 && (
         <Pagination 
           currentPage={currentPage} 
           pageSize={pageSize} 

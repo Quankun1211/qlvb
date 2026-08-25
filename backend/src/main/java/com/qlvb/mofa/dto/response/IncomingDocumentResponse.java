@@ -24,6 +24,8 @@ public class IncomingDocumentResponse {
 
     private LocalDate receivedDate;
 
+    private LocalDate dueAt;
+
     private String issuingAgency;
 
     private String handlingUnit;

@@ -55,8 +55,11 @@ export default function LoginPage() {
       const data = await response.json().catch(() => ({}));
 
       localStorage.setItem("isLoggedIn", "true");
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      if (data.accessToken) {
+        localStorage.setItem("token", data.accessToken);
+      }
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
       }
       router.push("/");
     } catch (err) {
