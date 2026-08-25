@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, X, ChevronDown } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
@@ -12,8 +13,20 @@ export default function CongViecDuocGiao() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const searchParams = useSearchParams();
+  const queryQ = searchParams.get("q") || "";
   const [activeDateFilter, setActiveDateFilter] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState("2026");
+  const [searchKeyword, setSearchKeyword] = useState(queryQ);
+
+  useEffect(() => {
+    setSearchKeyword(queryQ);
+  }, [queryQ]);
+
+  const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   
   // Dropdowns
   const [showLoaiThongBaoDropdown, setShowLoaiThongBaoDropdown] = useState(false);
@@ -69,6 +82,7 @@ export default function CongViecDuocGiao() {
 
   const handleRefresh = () => {
     setActiveDateFilter("");
+    setSearchKeyword("");
     setSelectedYear("2026");
     setSelectedLoaiThongBao([...loaiThongBaoList]);
     setSelectedStatuses([...trangThaiList]);
@@ -87,6 +101,13 @@ export default function CongViecDuocGiao() {
   ];
 
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
+
+  if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
+    filteredData = filteredData.filter(row => 
+      removeAccents(row.tenCongViec).includes(kw)
+    );
+  }
 
   if (activeDateFilter === "today") {
     filteredData = filteredData.filter(row => row.ngayGiao === "25/08/2026");
@@ -117,6 +138,13 @@ export default function CongViecDuocGiao() {
 
         <div className="flex justify-end items-center mt-2">
           <div className="flex items-center gap-2">
+            <input 
+              type="text" 
+              placeholder="Nhập vào từ khóa tìm kiếm"
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              className="w-[250px] border border-gray-300 rounded px-3 py-1.5 text-[13px] focus:border-[#005fb8] focus:outline-none placeholder:text-gray-500 text-gray-900"
+            />
             <div className="relative" ref={ltbRef}>
               <button 
                 onClick={() => setShowLoaiThongBaoDropdown(!showLoaiThongBaoDropdown)}

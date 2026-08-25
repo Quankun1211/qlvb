@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, Paperclip } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
-import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import VanBanTrinhDetailModal from "@/components/shared/VanBanTrinhDetailModal";
 
 const allStatuses = [
   "Đang soạn thảo", "Đang xin ý kiến", "Đang trình LĐ đơn vị", "Đã phê duyệt", 
@@ -95,11 +95,16 @@ export default function ToanBoVanBanTrinh() {
   ];
   let filteredData = dummyData.filter(row => selectedStatuses.includes(row.trangThai));
 
+    const removeAccents = (str: string | undefined | null) => {
+    if (!str) return "";
+    return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
   if (searchKeyword) {
+    const kw = removeAccents(searchKeyword);
     filteredData = filteredData.filter(row => 
-      (row.title && row.title.toLowerCase().includes(searchKeyword.toLowerCase())) ||
-      (row.so && row.so.toLowerCase().includes(searchKeyword.toLowerCase())) ||
-      (row.nguoi && row.nguoi.toLowerCase().includes(searchKeyword.toLowerCase()))
+      removeAccents(row.title).includes(kw) ||
+      removeAccents(row.so).includes(kw) ||
+      removeAccents(row.nguoi).includes(kw)
     );
   }
 
@@ -510,10 +515,9 @@ export default function ToanBoVanBanTrinh() {
       )}
 
       {/* --- DOCUMENT DETAIL MODAL --- */}
-      <DocumentDetailModal 
+      <VanBanTrinhDetailModal 
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
-        title="Chi tiết văn bản trình"
       />
 
     </div>

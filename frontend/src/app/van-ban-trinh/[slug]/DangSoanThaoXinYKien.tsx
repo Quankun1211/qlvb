@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, RefreshCcw, Plus, X, ChevronDown, Paperclip } from "lucide-react";
 import Pagination from "../../van-ban-den/[slug]/Pagination";
-import DocumentDetailModal from "@/components/shared/DocumentDetailModal";
+import VanBanTrinhDetailModal from "@/components/shared/VanBanTrinhDetailModal";
 
 const allStatuses = [
   "Đang soạn thảo", "Đang xin ý kiến"
@@ -490,10 +490,9 @@ export default function DangSoanThaoXinYKien() {
       )}
 
       {/* --- DOCUMENT DETAIL MODAL --- */}
-      <DocumentDetailModal 
+      <VanBanTrinhDetailModal 
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
-        title="Chi tiết văn bản đang soạn thảo/xin ý kiến"
       />
 
     </div>

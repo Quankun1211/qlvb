@@ -17,7 +17,7 @@ public class WorkService {
 
     private final WorkRepository workRepository;
     private final SecurityUtils securityUtils;
-    private final WorkAssigneeRepository workAssigneeRepository; // Giả định bạn đã tạo repo này
+    private final WorkAssigneeRepository workAssigneeRepository;
 
     public Page<WorkResponse> getWorksAssignedToUser(Long userId, Pageable pageable) {
         return workRepository.findWorksAssignedToUser(userId, pageable)

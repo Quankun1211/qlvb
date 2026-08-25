@@ -1,6 +1,8 @@
 "use client";
 import { useParams } from "next/navigation";
 import ToanBoVanBanDi from "./ToanBoVanBanDi";
+import VanBanDaPhatHanh from "./VanBanDaPhatHanh";
+import VanBanDaPhatHanhCaNhan from "./VanBanDaPhatHanhCaNhan";
 
 export default function VanBanDiSubPage() {
   const params = useParams();
@@ -8,6 +10,12 @@ export default function VanBanDiSubPage() {
   
   if (slug === 'toan-bo-van-ban-di') {
     return <ToanBoVanBanDi />;
+  }
+  if (slug === 'van-ban-da-phat-hanh') {
+    return <VanBanDaPhatHanh />;
+  }
+  if (slug === 'van-ban-da-phat-hanh-cua-ca-nhan') {
+    return <VanBanDaPhatHanhCaNhan />;
   }
 
   return (
